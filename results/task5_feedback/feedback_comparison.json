@@ -1,0 +1,88 @@
+{
+  "generalization_by_policy": {
+    "sft": {
+      "policy": "sft",
+      "gsm_exact_accuracy": null,
+      "transfer_exact_accuracy": null,
+      "accuracy_transfer_drop": null,
+      "accuracy_transfer_relative_drop": null
+    },
+    "rlvr": {
+      "policy": "rlvr",
+      "gsm_exact_accuracy": null,
+      "transfer_exact_accuracy": null,
+      "accuracy_transfer_drop": null,
+      "accuracy_transfer_relative_drop": null
+    },
+    "rlaif": {
+      "policy": "rlaif",
+      "gsm_exact_accuracy": null,
+      "transfer_exact_accuracy": null,
+      "accuracy_transfer_drop": null,
+      "accuracy_transfer_relative_drop": null
+    }
+  },
+  "perturbation_diagnostics": {
+    "num_problems": 20,
+    "total_responses": 100,
+    "s_reason": {
+      "verifier": 0.0,
+      "ai_judge": null
+    },
+    "s_outcome": {
+      "verifier": 1.0,
+      "ai_judge": null
+    },
+    "exact_verifier_breakdown": {
+      "reasoning_corruption": {
+        "name": "reasoning_corruption",
+        "metric_tag": "S_reason",
+        "better_response_rate": 0.0,
+        "tie_rate": 1.0,
+        "wrong_preference_rate": 0.0,
+        "total_pairs": 20
+      },
+      "outcome_error": {
+        "name": "outcome_error",
+        "metric_tag": "S_outcome",
+        "better_response_rate": 1.0,
+        "tie_rate": 0.0,
+        "wrong_preference_rate": 0.0,
+        "total_pairs": 20
+      },
+      "persuasive_filler": {
+        "name": "persuasive_filler",
+        "metric_tag": "filler_susceptibility",
+        "better_response_rate": 0.0,
+        "tie_rate": 1.0,
+        "wrong_preference_rate": 0.0,
+        "total_pairs": 20
+      },
+      "gold_distractor": {
+        "name": "gold_distractor",
+        "metric_tag": "distractor_robustness",
+        "better_response_rate": 1.0,
+        "tie_rate": 0.0,
+        "wrong_preference_rate": 0.0,
+        "total_pairs": 20
+      }
+    },
+    "ai_judge_breakdown": null
+  },
+  "feedback_dimension_synthesis": {
+    "RLVR (Exact Verifier)": {
+      "signal_type": "Sparse binary terminal reward {0, 1}",
+      "coverage": "Exact outcome-only; zero intermediate reasoning visibility (S_reason = 0.0)",
+      "noise": "Zero noise (deterministic string & numerical equivalence checking)",
+      "exploitability": "Blind to flawed intermediate derivations and lucky guesses; immune to filler/length bias",
+      "compute_cost": "Negligible (sub-millisecond CPU regex extraction; 0 GPU memory/compute)"
+    },
+    "RLAIF (Pairwise AI Judge)": {
+      "signal_type": "Dense relative pairwise win rate in [0, 1]",
+      "coverage": "Evaluates full reasoning chain and coherence; graded relative quality signal",
+      "noise": "Non-zero stochasticity, position bias (mitigated by prompt swapping), and judge ties",
+      "exploitability": "Susceptible to persuasive framing, stylistic filler, and verbosity bias",
+      "compute_cost": "High (requires autoregressive inference with a 3B LLM; substantial GPU memory & latency)"
+    }
+  }
+}
