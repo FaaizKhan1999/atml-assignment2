@@ -56,17 +56,48 @@ def generate_for_policy(cfg, policy_name: str, batch_size: int = 4):
     return records
 
 
+from common.data import load_yaml, repo_path, write_jsonl
+from common.models import clear_gpu, load_policy, load_tokenizer
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/feedback.yaml")
+    ap.add_argument("--policy", choices=["sft", "dpo", "ppo", "grpo", "all"], default="all")
+    ap.add_argument("--batch-size", type=int, default=4)
     args = ap.parse_args()
     cfg = load_yaml(args.config)
-    print("Policies:", list(policy_specs(cfg)))
-    print("XSTest rows:", len(load_xstest(cfg)))
-    raise NotImplementedError(
-        "TODO(student): call generate_for_policy for SFT/DPO/PPO/GRPO, save common deterministic responses, and preserve the fixed prompt order."
-    )
+
+    outdir = repo_path(cfg["results_dir"]) / "task4_safety"
+    outdir.mkdir(parents=True, exist_ok=True)
+
+    policies = ["sft", "dpo", "ppo", "grpo"] if args.policy == "all" else [args.policy]
+    specs = policy_specs(cfg)
+
+    print("=" * 65)
+    print("TASK 4 STEP 1: GENERATE DETERMINISTIC RESPONSES ON XSTEST")
+    print(f"Policies to generate: {policies}")
+    print(f"Output directory: {outdir}")
+    print("=" * 65)
+
+    for pol in policies:
+        adapter = specs.get(pol)
+        if adapter is not None:
+            adapter_p = repo_path(adapter)
+            if not (adapter_p / "adapter_config.json").exists() and not (adapter_p / "config.json").exists():
+                print(f"\n[Warning] Adapter for '{pol}' not found at {adapter_p}. Skipping.")
+                continue
+
+        out_file = outdir / f"generated_{pol}.jsonl"
+        print(f"\nGenerating responses for '{pol}' (adapter={adapter})...")
+        records = generate_for_policy(cfg, pol, batch_size=args.batch_size)
+        write_jsonl(out_file, records)
+        print(f"Saved {len(records)} responses to {out_file}")
+        clear_gpu()
+
+    print("\nGeneration step complete.\n")
 
 
 if __name__ == "__main__":
     main()
+

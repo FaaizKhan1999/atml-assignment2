@@ -102,21 +102,92 @@ def judge_one(tok, model, prompt, response, max_new_tokens=64):
     return parse_json(generated)
 
 
+from common.data import repo_path, write_jsonl
+from common.models import clear_gpu
+
+
+def judge_file(tok, model, input_path: Path, output_path: Path, max_new_tokens: int = 64) -> list[dict]:
+    rows = read_jsonl(input_path)
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+
+    # Check if already partially judged to support resuming
+    existing_judged = []
+    if output_path.exists():
+        try:
+            existing_judged = read_jsonl(output_path)
+        except Exception:
+            existing_judged = []
+
+    already_done = len(existing_judged)
+    if already_done >= len(rows):
+        print(f"All {len(rows)} responses already judged in {output_path}.")
+        return existing_judged
+
+    judged_rows = existing_judged.copy()
+    print(f"Judging {len(rows) - already_done} responses (already completed: {already_done}/{len(rows)})...")
+
+    for idx in range(already_done, len(rows)):
+        r = rows[idx]
+        judgment = judge_one(
+            tok,
+            model,
+            prompt=r["prompt"],
+            response=r["response"],
+            max_new_tokens=max_new_tokens,
+        )
+        record = {
+            **r,
+            "judge_label": judgment["label"],
+            "judge_confidence": judgment["confidence"],
+            "rationale_tag": judgment["rationale_tag"],
+        }
+        judged_rows.append(record)
+
+        if (idx + 1) % 50 == 0 or idx + 1 == len(rows):
+            print(f"  Judged {idx + 1}/{len(rows)} [Latest: {record['judge_label']}]")
+            # Incremental save for checkpointing
+            write_jsonl(output_path, judged_rows)
+
+    write_jsonl(output_path, judged_rows)
+    print(f"Finished judging. Output saved to {output_path}")
+    return judged_rows
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--config", default="configs/feedback.yaml")
-    ap.add_argument("--input", help="Optional generated JSONL file to inspect")
+    ap.add_argument("--policy", choices=["sft", "dpo", "ppo", "grpo", "all"], default="all")
+    ap.add_argument("--input", help="Optional explicit generated JSONL file to judge")
+    ap.add_argument("--output", help="Optional explicit output path for judged JSONL")
     args = ap.parse_args()
     cfg = load_yaml(args.config)
+
+    max_new_tokens = int(cfg.get("judge_max_new_tokens", 64))
+    outdir = repo_path(cfg["results_dir"]) / "task4_safety"
+    outdir.mkdir(parents=True, exist_ok=True)
+
     tok, model = load_judge(cfg)
-    print("Fixed Task 4 judge loaded:", cfg["ai_judge_model"])
+    print(f"Loaded Task 4 safety judge: {cfg['ai_judge_model']}\n")
+
     if args.input:
-        rows = read_jsonl(args.input)
-        print("Input rows:", len(rows))
-    raise NotImplementedError(
-        "TODO(student): apply judge_one to your frozen-policy response files, cache the labels, and implement the required Task 4 aggregation."
-    )
+        in_p = repo_path(args.input)
+        out_p = repo_path(args.output) if args.output else outdir / f"judged_{in_p.stem.replace('generated_', '')}.jsonl"
+        judge_file(tok, model, in_p, out_p, max_new_tokens=max_new_tokens)
+    else:
+        policies = ["sft", "dpo", "ppo", "grpo"] if args.policy == "all" else [args.policy]
+        for pol in policies:
+            in_p = outdir / f"generated_{pol}.jsonl"
+            out_p = outdir / f"judged_{pol}.jsonl"
+            if not in_p.exists():
+                print(f"[Warning] Generated responses for '{pol}' not found at {in_p}. Skipping.")
+                continue
+            print(f"\n--- Judging responses for policy '{pol}' ---")
+            judge_file(tok, model, in_p, out_p, max_new_tokens=max_new_tokens)
+
+    clear_gpu()
+    print("\nJudging completed successfully.")
 
 
 if __name__ == "__main__":
     main()
+
