@@ -1,0 +1,112 @@
+{
+  "difficulty_median_threshold": 2.19873046875,
+  "results_by_k": [
+    {
+      "group_size_k": 2,
+      "total_completions": 192,
+      "overall": {
+        "num_groups": 96,
+        "informative_rate": 0.9375,
+        "uninformative_rate": 0.0625,
+        "mean_reward_std": 0.3845672607421875,
+        "advantage_variance": 0.9374814173564774
+      },
+      "hard_bin": {
+        "num_groups": 48,
+        "informative_rate": 0.8958333333333334,
+        "uninformative_rate": 0.10416666666666663,
+        "mean_reward_std": 0.5283304850260416,
+        "advantage_variance": 0.8958263622728104
+      },
+      "easy_bin": {
+        "num_groups": 48,
+        "informative_rate": 0.9791666666666666,
+        "uninformative_rate": 0.02083333333333337,
+        "mean_reward_std": 0.24080403645833334,
+        "advantage_variance": 0.979136472440144
+      }
+    },
+    {
+      "group_size_k": 4,
+      "total_completions": 192,
+      "overall": {
+        "num_groups": 48,
+        "informative_rate": 0.9583333333333334,
+        "uninformative_rate": 0.04166666666666663,
+        "mean_reward_std": 0.5410043647319412,
+        "advantage_variance": 0.9583276282884473
+      },
+      "hard_bin": {
+        "num_groups": 24,
+        "informative_rate": 0.9166666666666666,
+        "uninformative_rate": 0.08333333333333337,
+        "mean_reward_std": 0.711506330909153,
+        "advantage_variance": 0.9166630916976176
+      },
+      "easy_bin": {
+        "num_groups": 24,
+        "informative_rate": 1.0,
+        "uninformative_rate": 0.0,
+        "mean_reward_std": 0.37050239855472933,
+        "advantage_variance": 0.999992164879277
+      }
+    },
+    {
+      "group_size_k": 8,
+      "total_completions": 192,
+      "overall": {
+        "num_groups": 24,
+        "informative_rate": 0.9583333333333334,
+        "uninformative_rate": 0.04166666666666663,
+        "mean_reward_std": 0.6190544134665206,
+        "advantage_variance": 0.9583290996055105
+      },
+      "hard_bin": {
+        "num_groups": 12,
+        "informative_rate": 0.9166666666666666,
+        "uninformative_rate": 0.08333333333333337,
+        "mean_reward_std": 0.8002487347571022,
+        "advantage_variance": 0.9166641410131647
+      },
+      "easy_bin": {
+        "num_groups": 12,
+        "informative_rate": 1.0,
+        "uninformative_rate": 0.0,
+        "mean_reward_std": 0.4378600921759388,
+        "advantage_variance": 0.9999940581978564
+      }
+    }
+  ],
+  "qualitative_samples": {
+    "informative_example": {
+      "group_size_k": 2,
+      "prompt_id": "671",
+      "rewards": [
+        -2.0,
+        -3.359375
+      ],
+      "relative_advantages": [
+        0.9999985287377967,
+        -0.9999985287377967
+      ],
+      "completions": [
+        "ાથી વ્યવસાય છે.\nSolution: Employment takes place there for those who work on the street and earn their living through begging, trade, government service, and profit-seeking private business. \nInput: ભ...",
+        "ાથી ખેતમજૂરી મેળવવા હોય.\nSolution: ସେହେବ ସାର୍ଗ୍ୱ୍ଘଳ ଏବଂ ସୁଧ୍ୟକ୍ଷେପୀନାମାସୀ ଅଙ୍କର ମୂଳୀ ହୋଇ, ସର୍ବସଙ୍ଗିକ୍ଷ୍ଟ ଉଦ୍ଧାର ହୋଇ, ଚାର୍ଡ୍ଦାର ହୋଇ ଏବଂ କେନ୍ଦ୍ରୀ ନେତରର ସ୍ୱାରୀ ହୋଇ ତେବେ ଦେଶରେ ପ୍ରକାଶ କରାଉଛି।\nInput: વિશેષત..."
+      ],
+      "description": "Completions received distinct rewards, producing non-zero positive and negative advantages for relative policy updates."
+    },
+    "uninformative_example": {
+      "group_size_k": 2,
+      "prompt_id": "981",
+      "rewards": [
+        2.40625,
+        2.40625
+      ],
+      "completions": [
+        "Warm: Orange, Red\nCool: Green, Blue, Purple...",
+        "Warm: Orange, Red\nCool: Green, Blue, Purple..."
+      ],
+      "description": "Both completions received identical reward; within-group std is 0.0, so advantage collapses to 0.0 (no gradient update)."
+    }
+  }
+}
