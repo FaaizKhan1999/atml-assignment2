@@ -51,8 +51,19 @@ def evaluate_pairs(
     all_pol_margins = []
     all_ref_margins = []
 
-    for i in range(0, len(rows), batch_size):
-        batch_rows = rows[i : i + batch_size]
+    # Filter out examples where prompt alone exceeds max_length
+    valid_rows = []
+    for r in rows:
+        prompt = prompt_messages_from_preference(r)
+        p_ids = tokenizer.apply_chat_template(prompt, tokenize=True, add_generation_prompt=True)
+        if len(p_ids) < max_length - 8:
+            valid_rows.append(r)
+
+    if len(valid_rows) < len(rows):
+        print(f"Filtered {len(rows) - len(valid_rows)}/{len(rows)} eval examples where prompt >= {max_length - 8} tokens.")
+
+    for i in range(0, len(valid_rows), batch_size):
+        batch_rows = valid_rows[i : i + batch_size]
         chosen_exs = []
         rejected_exs = []
         for r in batch_rows:

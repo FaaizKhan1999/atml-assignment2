@@ -34,21 +34,39 @@ def make_collate(tokenizer, max_length):
     return collate
 
 
+def filter_valid_dpo_rows(rows: list[dict], tokenizer, max_length: int) -> list[dict]:
+    valid_rows = []
+    dropped = 0
+    for r in rows:
+        prompt = prompt_messages_from_preference(r)
+        p_ids = tokenizer.apply_chat_template(prompt, tokenize=True, add_generation_prompt=True)
+        if len(p_ids) < max_length - 8:
+            valid_rows.append(r)
+        else:
+            dropped += 1
+    if dropped > 0:
+        print(f"Filtered {dropped} examples whose prompt length >= {max_length - 8} tokens.")
+    return valid_rows
+
+
 def prepare_dpo_run(config_path: str, dataset_path: str | None = None, beta: float | None = None, max_examples: int | None = None):
     cfg = load_yaml(config_path)
     set_seed(int(cfg["seed"]))
     path = dataset_path or cfg["paths"]["dpo_standard_train"]
     rows = read_jsonl(path)
-    if max_examples is not None:
-        rows = rows[: int(max_examples)]
-
     tokenizer = load_tokenizer(cfg["base_model"])
+    max_seq_len = int(cfg["max_sequence_length"])
+
+    valid_rows = filter_valid_dpo_rows(rows, tokenizer, max_seq_len)
+    if max_examples is not None:
+        valid_rows = valid_rows[: int(max_examples)]
+
     model = load_policy(cfg, trainable=True, fresh_lora=True)
     loader = DataLoader(
-        rows,
+        valid_rows,
         batch_size=int(cfg["batch_size"]),
         shuffle=True,
-        collate_fn=make_collate(tokenizer, int(cfg["max_sequence_length"])),
+        collate_fn=make_collate(tokenizer, max_seq_len),
     )
     optimizer = AdamW(
         trainable_parameters(model),
