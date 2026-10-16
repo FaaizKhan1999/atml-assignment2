@@ -5,7 +5,7 @@ from pathlib import Path
 import numpy as np
 
 from common.data import load_yaml, repo_path
-from common.logging_utils import save_json
+from common.logging_utils import load_json, save_json
 from common.metrics import safe_corr
 from common.models import clear_gpu
 from task3_grpo.continue_train import run_grpo
@@ -61,8 +61,15 @@ def run_normalization_comparison(config_path: str, skip_train: bool = False):
         # Compute length-conditioned statistics
         # 1. From training trajectory: average length-loss correlation
         avg_len_loss_corr = None
+        train_log = results_dir / f"train_{run_name}.json"
+        history = []
         if train_record and train_record.get("history"):
-            corrs = [h["length_loss_correlation"] for h in train_record["history"] if "length_loss_correlation" in h]
+            history = train_record["history"]
+        elif train_log.exists():
+            history = load_json(train_log).get("history", [])
+
+        if history:
+            corrs = [h["length_loss_correlation"] for h in history if "length_loss_correlation" in h]
             if corrs:
                 avg_len_loss_corr = float(np.mean(corrs))
 

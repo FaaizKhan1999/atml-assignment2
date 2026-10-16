@@ -79,23 +79,33 @@ def evaluate_cached_rollouts(cfg: dict, rows: list[dict], eps_values: list[float
         ex = encode_prompt_response(tokenizer, p_msgs, r["response"], max_tot_len)
         examples.append(ex)
 
-    padded = pad_batch(tokenizer, examples)
-    padded = {k: v.to(device) for k, v in padded.items()}
+    new_logp_tensor = torch.zeros_like(old_logp_tensor)
+    micro_batch_size = 4
 
     with torch.no_grad():
-        outputs = policy(input_ids=padded["input_ids"], attention_mask=padded["attention_mask"], use_cache=False, return_dict=True)
-        logits = outputs.logits[:, :-1, :]
-        labels = padded["input_ids"][:, 1:]
-        resp_mask = padded["response_mask"][:, 1:]
-        logp = F.log_softmax(logits.float(), dim=-1)
-        tok_logp = torch.gather(logp, -1, labels.unsqueeze(-1)).squeeze(-1)
+        for start_idx in range(0, len(examples), micro_batch_size):
+            chunk = examples[start_idx : start_idx + micro_batch_size]
+            padded = pad_batch(tokenizer, chunk)
+            padded = {k: v.to(device) for k, v in padded.items()}
 
-    new_logp_tensor = torch.zeros_like(old_logp_tensor)
-    for i in range(batch_size):
-        L = int(mask_tensor[i].sum().item())
-        row_resp_toks = tok_logp[i][resp_mask[i].bool()]
-        matched_len = min(L, len(row_resp_toks))
-        new_logp_tensor[i, :matched_len] = row_resp_toks[:matched_len]
+            outputs = policy(
+                input_ids=padded["input_ids"],
+                attention_mask=padded["attention_mask"],
+                use_cache=False,
+                return_dict=True,
+            )
+            logits = outputs.logits[:, :-1, :]
+            labels = padded["input_ids"][:, 1:]
+            resp_mask = padded["response_mask"][:, 1:]
+            logp = F.log_softmax(logits.float(), dim=-1)
+            tok_logp = torch.gather(logp, -1, labels.unsqueeze(-1)).squeeze(-1)
+
+            for b in range(len(chunk)):
+                idx = start_idx + b
+                L = int(mask_tensor[idx].sum().item())
+                row_resp_toks = tok_logp[b][resp_mask[b].bool()]
+                matched_len = min(L, len(row_resp_toks))
+                new_logp_tensor[idx, :matched_len] = row_resp_toks[:matched_len]
 
     beta_kl = float(cfg.get("kl_beta", 0.10))
     gamma = float(cfg.get("gamma", 1.0))
