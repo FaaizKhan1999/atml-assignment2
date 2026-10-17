@@ -62,7 +62,10 @@ def ppo_policy_loss(new_logp, old_logp, advantage, mask, eps=0.2):
 
 
 def value_mse_loss(predicted_values, returns, mask):
-    return masked_mean((predicted_values - returns) ** 2, mask)
+    pred_f = predicted_values.float()
+    ret_f = returns.float()
+    mask_f = mask.float()
+    return masked_mean((pred_f - ret_f) ** 2, mask_f)
 
 
 def normalize_advantages(advantages, mask, eps=1e-6):
