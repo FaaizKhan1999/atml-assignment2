@@ -1,0 +1,54 @@
+{
+  "cached_batch_results": {
+    "0.05": {
+      "epsilon": 0.05,
+      "surrogate_loss": 0.07581979036331177,
+      "clip_fraction": 0.15951894223690033
+    },
+    "0.2": {
+      "epsilon": 0.2,
+      "surrogate_loss": 0.0719376653432846,
+      "clip_fraction": 0.055253006517887115
+    },
+    "0.5": {
+      "epsilon": 0.5,
+      "surrogate_loss": 0.06791827827692032,
+      "clip_fraction": 0.03823462501168251
+    }
+  },
+  "fork_results": [
+    {
+      "epsilon": 0.05,
+      "cached_clip_fraction": 0.15951894223690033,
+      "cached_surrogate_loss": 0.07581979036331177,
+      "reward_score_mean": 1.5747664642333985,
+      "kl_from_reference": -4.184458208612796e-05,
+      "response_length_mean": 303.25,
+      "response_length_std": 249.70426007579445,
+      "stability_loss_std": 0.000506580479942036,
+      "stability_grad_norm_std": 0.46639713588058757
+    },
+    {
+      "epsilon": 0.2,
+      "cached_clip_fraction": 0.055253006517887115,
+      "cached_surrogate_loss": 0.0719376653432846,
+      "reward_score_mean": 1.4798831176757812,
+      "kl_from_reference": 1.6241580484575026e-05,
+      "response_length_mean": 298.87,
+      "response_length_std": 248.2773511619616,
+      "stability_loss_std": 0.00032151021850172144,
+      "stability_grad_norm_std": 0.34621818597353904
+    },
+    {
+      "epsilon": 0.5,
+      "cached_clip_fraction": 0.03823462501168251,
+      "cached_surrogate_loss": 0.06791827827692032,
+      "reward_score_mean": 1.4798831176757812,
+      "kl_from_reference": 1.6241580484575026e-05,
+      "response_length_mean": 298.87,
+      "response_length_std": 248.2773511619616,
+      "stability_loss_std": 0.00032151021850172144,
+      "stability_grad_norm_std": 0.34621818597353904
+    }
+  ]
+}
