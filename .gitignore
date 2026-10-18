@@ -11,6 +11,9 @@ hf_cache/
 .huggingface/
 wandb/
 
+# Student outputs
+outputs/
+
 # Downloaded course assets
 cached/*
 !cached/README.md

@@ -3,11 +3,11 @@
   "total_responses": 100,
   "s_reason": {
     "verifier": 0.0,
-    "ai_judge": null
+    "ai_judge": 0.0
   },
   "s_outcome": {
     "verifier": 1.0,
-    "ai_judge": null
+    "ai_judge": 0.0
   },
   "exact_verifier_breakdown": {
     "reasoning_corruption": {
@@ -43,7 +43,40 @@
       "total_pairs": 20
     }
   },
-  "ai_judge_breakdown": null,
+  "ai_judge_breakdown": {
+    "reasoning_corruption": {
+      "name": "reasoning_corruption",
+      "metric_tag": "S_reason",
+      "better_response_rate": 0.0,
+      "tie_rate": 1.0,
+      "wrong_preference_rate": 0.0,
+      "total_pairs": 20
+    },
+    "outcome_error": {
+      "name": "outcome_error",
+      "metric_tag": "S_outcome",
+      "better_response_rate": 0.0,
+      "tie_rate": 1.0,
+      "wrong_preference_rate": 0.0,
+      "total_pairs": 20
+    },
+    "persuasive_filler": {
+      "name": "persuasive_filler",
+      "metric_tag": "filler_susceptibility",
+      "better_response_rate": 0.0,
+      "tie_rate": 0.75,
+      "wrong_preference_rate": 0.25,
+      "total_pairs": 20
+    },
+    "gold_distractor": {
+      "name": "gold_distractor",
+      "metric_tag": "distractor_robustness",
+      "better_response_rate": 0.25,
+      "tie_rate": 0.7,
+      "wrong_preference_rate": 0.05,
+      "total_pairs": 20
+    }
+  },
   "qualitative_samples": {
     "reasoning_corruption": {
       "problem_id": "803",

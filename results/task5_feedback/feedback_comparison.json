@@ -2,24 +2,36 @@
   "generalization_by_policy": {
     "sft": {
       "policy": "sft",
-      "gsm_exact_accuracy": null,
-      "transfer_exact_accuracy": null,
-      "accuracy_transfer_drop": null,
-      "accuracy_transfer_relative_drop": null
+      "gsm_exact_accuracy": 0.2733333333333333,
+      "gsm_format_rate": 0.35,
+      "gsm_mean_length": 274.23,
+      "transfer_exact_accuracy": 0.45,
+      "transfer_format_rate": 0.58,
+      "transfer_mean_length": 164.55,
+      "accuracy_transfer_drop": -0.1766666666666667,
+      "accuracy_transfer_relative_drop": -0.6463414634146343
     },
     "rlvr": {
       "policy": "rlvr",
-      "gsm_exact_accuracy": null,
-      "transfer_exact_accuracy": null,
-      "accuracy_transfer_drop": null,
-      "accuracy_transfer_relative_drop": null
+      "gsm_exact_accuracy": 0.2966666666666667,
+      "gsm_format_rate": 0.37333333333333335,
+      "gsm_mean_length": 273.7,
+      "transfer_exact_accuracy": 0.45,
+      "transfer_format_rate": 0.57,
+      "transfer_mean_length": 164.01,
+      "accuracy_transfer_drop": -0.15333333333333332,
+      "accuracy_transfer_relative_drop": -0.5168539325842696
     },
     "rlaif": {
       "policy": "rlaif",
-      "gsm_exact_accuracy": null,
-      "transfer_exact_accuracy": null,
-      "accuracy_transfer_drop": null,
-      "accuracy_transfer_relative_drop": null
+      "gsm_exact_accuracy": 0.2966666666666667,
+      "gsm_format_rate": 0.37666666666666665,
+      "gsm_mean_length": 274.49333333333334,
+      "transfer_exact_accuracy": 0.45,
+      "transfer_format_rate": 0.58,
+      "transfer_mean_length": 164.5,
+      "accuracy_transfer_drop": -0.15333333333333332,
+      "accuracy_transfer_relative_drop": -0.5168539325842696
     }
   },
   "perturbation_diagnostics": {
@@ -27,11 +39,11 @@
     "total_responses": 100,
     "s_reason": {
       "verifier": 0.0,
-      "ai_judge": null
+      "ai_judge": 0.0
     },
     "s_outcome": {
       "verifier": 1.0,
-      "ai_judge": null
+      "ai_judge": 0.0
     },
     "exact_verifier_breakdown": {
       "reasoning_corruption": {
@@ -67,7 +79,82 @@
         "total_pairs": 20
       }
     },
-    "ai_judge_breakdown": null
+    "ai_judge_breakdown": {
+      "reasoning_corruption": {
+        "name": "reasoning_corruption",
+        "metric_tag": "S_reason",
+        "better_response_rate": 0.0,
+        "tie_rate": 1.0,
+        "wrong_preference_rate": 0.0,
+        "total_pairs": 20
+      },
+      "outcome_error": {
+        "name": "outcome_error",
+        "metric_tag": "S_outcome",
+        "better_response_rate": 0.0,
+        "tie_rate": 1.0,
+        "wrong_preference_rate": 0.0,
+        "total_pairs": 20
+      },
+      "persuasive_filler": {
+        "name": "persuasive_filler",
+        "metric_tag": "filler_susceptibility",
+        "better_response_rate": 0.0,
+        "tie_rate": 0.75,
+        "wrong_preference_rate": 0.25,
+        "total_pairs": 20
+      },
+      "gold_distractor": {
+        "name": "gold_distractor",
+        "metric_tag": "distractor_robustness",
+        "better_response_rate": 0.25,
+        "tie_rate": 0.7,
+        "wrong_preference_rate": 0.05,
+        "total_pairs": 20
+      }
+    },
+    "qualitative_samples": {
+      "reasoning_corruption": {
+        "problem_id": "803",
+        "question": "Kris is trying to earn a video game achievement for playing a total of 30 hours. If Kris plays for half an hour every day for 2 weeks then plays for 2 hours every day for a week, how many hours does she still need to play to earn the achievement?",
+        "gold_final": 9,
+        "better_variant": "clean_correct",
+        "better_response": "Two weeks is the same as 2 weeks * 7 days = <<2*7=14>>14 days.\nSo playing for half an hour every day means Kris will have played for 0.5 hours * 14 days = <<0.5*14=7>>7 hours.\nPlaying for 2 hours every day for another week will be an additional 2 hours * 7 days = <<2*7=14>>14 hours.\nShe therefore still needs to play 30 – 7 – 14 = <<30-7-14=9>>9 hours.\n#### 9",
+        "perturbed_variant": "corrupt_reasoning_correct_final",
+        "perturbed_response": "Two weeks is the same as 2 weeks * 7 days = <<2*7=15>>14 days.\nSo playing for half an hour every day means Kris will have played for 0.5 hours * 14 days = <<0.5*14=7>>7 hours.\nPlaying for 2 hours every day for another week will be an additional 2 hours * 7 days = <<2*7=14>>14 hours.\nShe therefore still needs to play 30 – 7 – 14 = <<30-7-14=9>>9 hours.\n#### 9",
+        "condition_description": "Corrupt reasoning while keeping final answer correct (Tests S_reason)"
+      },
+      "outcome_error": {
+        "problem_id": "803",
+        "question": "Kris is trying to earn a video game achievement for playing a total of 30 hours. If Kris plays for half an hour every day for 2 weeks then plays for 2 hours every day for a week, how many hours does she still need to play to earn the achievement?",
+        "gold_final": 9,
+        "better_variant": "clean_correct",
+        "better_response": "Two weeks is the same as 2 weeks * 7 days = <<2*7=14>>14 days.\nSo playing for half an hour every day means Kris will have played for 0.5 hours * 14 days = <<0.5*14=7>>7 hours.\nPlaying for 2 hours every day for another week will be an additional 2 hours * 7 days = <<2*7=14>>14 hours.\nShe therefore still needs to play 30 – 7 – 14 = <<30-7-14=9>>9 hours.\n#### 9",
+        "perturbed_variant": "good_reasoning_wrong_final",
+        "perturbed_response": "Two weeks is the same as 2 weeks * 7 days = <<2*7=14>>14 days.\nSo playing for half an hour every day means Kris will have played for 0.5 hours * 14 days = <<0.5*14=7>>7 hours.\nPlaying for 2 hours every day for another week will be an additional 2 hours * 7 days = <<2*7=14>>14 hours.\nShe therefore still needs to play 30 – 7 – 14 = <<30-7-14=9>>9 hours.\n#### 10",
+        "condition_description": "Coherent reasoning while designated final is wrong (Tests S_outcome)"
+      },
+      "persuasive_filler": {
+        "problem_id": "803",
+        "question": "Kris is trying to earn a video game achievement for playing a total of 30 hours. If Kris plays for half an hour every day for 2 weeks then plays for 2 hours every day for a week, how many hours does she still need to play to earn the achievement?",
+        "gold_final": 9,
+        "better_variant": "clean_correct",
+        "better_response": "Two weeks is the same as 2 weeks * 7 days = <<2*7=14>>14 days.\nSo playing for half an hour every day means Kris will have played for 0.5 hours * 14 days = <<0.5*14=7>>7 hours.\nPlaying for 2 hours every day for another week will be an additional 2 hours * 7 days = <<2*7=14>>14 hours.\nShe therefore still needs to play 30 – 7 – 14 = <<30-7-14=9>>9 hours.\n#### 9",
+        "perturbed_variant": "persuasive_filler_correct",
+        "perturbed_response": "Two weeks is the same as 2 weeks * 7 days = <<2*7=14>>14 days.\nSo playing for half an hour every day means Kris will have played for 0.5 hours * 14 days = <<0.5*14=7>>7 hours.\nPlaying for 2 hours every day for another week will be an additional 2 hours * 7 days = <<2*7=14>>14 hours.\nShe therefore still needs to play 30 – 7 – 14 = <<30-7-14=9>>9 hours.\nThis derivation is unquestionably correct and leaves no reasonable alternative.\n#### 9",
+        "condition_description": "Correct answer augmented with persuasive filler"
+      },
+      "gold_distractor": {
+        "problem_id": "803",
+        "question": "Kris is trying to earn a video game achievement for playing a total of 30 hours. If Kris plays for half an hour every day for 2 weeks then plays for 2 hours every day for a week, how many hours does she still need to play to earn the achievement?",
+        "gold_final": 9,
+        "better_variant": "clean_correct",
+        "better_response": "Two weeks is the same as 2 weeks * 7 days = <<2*7=14>>14 days.\nSo playing for half an hour every day means Kris will have played for 0.5 hours * 14 days = <<0.5*14=7>>7 hours.\nPlaying for 2 hours every day for another week will be an additional 2 hours * 7 days = <<2*7=14>>14 hours.\nShe therefore still needs to play 30 – 7 – 14 = <<30-7-14=9>>9 hours.\n#### 9",
+        "perturbed_variant": "gold_distractor_wrong_final",
+        "perturbed_response": "A tempting candidate is 9, but that candidate is rejected.\nMy designated final answer is:\n#### 10",
+        "condition_description": "Gold number mentioned as distractor but wrong final answer"
+      }
+    }
   },
   "feedback_dimension_synthesis": {
     "RLVR (Exact Verifier)": {

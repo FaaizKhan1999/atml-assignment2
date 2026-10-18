@@ -1,0 +1,48 @@
+{
+  "dataset": "gsm",
+  "metrics_by_policy": {
+    "sft": {
+      "num_evaluated": 300,
+      "exact_accuracy": 0.2733333333333333,
+      "format_compliance_rate": 0.35,
+      "mean_response_length": 274.23,
+      "std_response_length": 86.22797554544967
+    },
+    "rlvr": {
+      "num_evaluated": 300,
+      "exact_accuracy": 0.2966666666666667,
+      "format_compliance_rate": 0.37333333333333335,
+      "mean_response_length": 273.7,
+      "std_response_length": 84.79404460220069
+    },
+    "rlaif": {
+      "num_evaluated": 300,
+      "exact_accuracy": 0.2966666666666667,
+      "format_compliance_rate": 0.37666666666666665,
+      "mean_response_length": 274.49333333333334,
+      "std_response_length": 85.77763862970866
+    }
+  },
+  "pairwise_against_sft": {
+    "rlvr": {
+      "total_comparisons": 300,
+      "wins": 6,
+      "ties": 290,
+      "losses": 4,
+      "pairwise_win_rate_vs_sft": 0.5033333333333333,
+      "verifier_strict_pairs": 13,
+      "verifier_judge_agreements": 2,
+      "verifier_judge_agreement_rate": 0.15384615384615385
+    },
+    "rlaif": {
+      "total_comparisons": 300,
+      "wins": 6,
+      "ties": 287,
+      "losses": 7,
+      "pairwise_win_rate_vs_sft": 0.49833333333333335,
+      "verifier_strict_pairs": 7,
+      "verifier_judge_agreements": 2,
+      "verifier_judge_agreement_rate": 0.2857142857142857
+    }
+  }
+}

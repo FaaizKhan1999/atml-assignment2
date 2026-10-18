@@ -1,0 +1,48 @@
+{
+  "dataset": "transfer",
+  "metrics_by_policy": {
+    "sft": {
+      "num_evaluated": 100,
+      "exact_accuracy": 0.45,
+      "format_compliance_rate": 0.58,
+      "mean_response_length": 164.55,
+      "std_response_length": 72.00463526746039
+    },
+    "rlvr": {
+      "num_evaluated": 100,
+      "exact_accuracy": 0.45,
+      "format_compliance_rate": 0.57,
+      "mean_response_length": 164.01,
+      "std_response_length": 72.05352107981955
+    },
+    "rlaif": {
+      "num_evaluated": 100,
+      "exact_accuracy": 0.45,
+      "format_compliance_rate": 0.58,
+      "mean_response_length": 164.5,
+      "std_response_length": 72.28340058408985
+    }
+  },
+  "pairwise_against_sft": {
+    "rlvr": {
+      "total_comparisons": 100,
+      "wins": 12,
+      "ties": 79,
+      "losses": 9,
+      "pairwise_win_rate_vs_sft": 0.515,
+      "verifier_strict_pairs": 4,
+      "verifier_judge_agreements": 1,
+      "verifier_judge_agreement_rate": 0.25
+    },
+    "rlaif": {
+      "total_comparisons": 100,
+      "wins": 14,
+      "ties": 78,
+      "losses": 8,
+      "pairwise_win_rate_vs_sft": 0.53,
+      "verifier_strict_pairs": 4,
+      "verifier_judge_agreements": 1,
+      "verifier_judge_agreement_rate": 0.25
+    }
+  }
+}
