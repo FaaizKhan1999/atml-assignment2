@@ -1,0 +1,60 @@
+\documentclass{article}
+
+\usepackage[main, final]{neurips_2026}
+
+\usepackage[utf8]{inputenc} % allow utf-8 input
+\usepackage[T1]{fontenc}    % use 8-bit T1 fonts
+\usepackage{hyperref}       % hyperlinks
+\usepackage{url}            % simple URL typesetting
+\usepackage{booktabs}       % professional-quality tables
+\usepackage{amsfonts}       % blackboard math symbols
+\usepackage{nicefrac}       % compact symbols for 1/2, etc.
+\usepackage{microtype}      % microtypography
+\usepackage{xcolor}         % colors
+\usepackage{float}
+\usepackage{graphicx}
+\usepackage{subcaption}
+\usepackage{natbib}
+\usepackage{amsmath, amssymb}
+
+\title{Venturing into the (W)OODs: An Exploration Beyond IID Scenarios}
+
+\author{
+  Faaiz Khan \\
+  Syed Babar Ali School of Science and Engineering\\
+  Lahore University of Management Sciences\\
+  Lahore, Pakistan\\
+  \texttt{25280051@lums.edu.pk} \\
+}
+
+\begin{document}
+
+\maketitle
+
+\begin{abstract}
+  Post-training adapts pretrained language models to human preferences and task constraints, but training objectives and feedback sources directly influence response length, refusal calibration, and optimization stability. We evaluate three preference optimization methods (DPO, PPO, GRPO) and two feedback modalities (exact outcome verification and AI judgment) on \texttt{Qwen2.5-1.5B-Instruct} with LoRA adapters. Specifically: (i) training DPO on length-balanced preference pairs yields higher accuracy on rejected-longer completions (73.4\% vs. 63.3\%, an 8-pair difference on $N = 79$ evaluated pairs); (ii) in a cached rollout batch, PPO clipping at $\epsilon = 0.05$ bounds 16.0\% of token updates (compared to 5.5\% at $\epsilon = 0.20$), while removing reference KL penalties ($\beta_{\text{KL}} = 0.0$) produces negligible policy drift over short continuation budgets (token KL $< 10^{-4}$ nats); (iii) in GRPO, within-group reward variance provides informative updates on 95.8\% of prompt groups for group sizes $K \ge 4$; (iv) on XSTest, the automated judge reported zero safe over-refusals across all four policies, but a 240-item audit across the four policies (60 prompts $\times$ 4) showed a 72.1\% agreement rate, with the judge labeling 40 auditor-identified over-refusals as justified refusals (10 per policy); and (v) on controlled math perturbations, deterministic verifiers detected all outcome errors ($S_{\text{outcome}} = 1.0$) but were invariant to reasoning corruption, whereas the pairwise AI judge tied on all 20 outcome-error pairs and preferred responses containing persuasive filler over clean solutions in 5 of 20 pairs (25.0\% under position-randomized scoring). These results show that bounded post-training gains remain sensitive to length and regularization constraints, while the 3B automated judge used here exhibits blind spots around benign refusal and subtle outcome discrepancies. Code and evaluation scripts: \url{https://github.com/FaaizKhan1999/atml-assignment2}.
+\end{abstract}
+
+\section{Introduction}
+
+\section{Experimental Setup and Methods}
+
+\section{Results and Analysis}
+
+\section{Cross-Task Analysis}
+
+\section{Conclusion}
+
+\newpage
+
+{
+\small
+\bibliographystyle{unsrtnat}
+\bibliography{refs} 
+}
+
+\newpage
+
+\appendix
+
+\end{document}

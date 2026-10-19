@@ -101,45 +101,65 @@ def compute_manual_audit_agreement(audit_csv_path: Path, judged_rows_map: dict[s
         return None
 
     # Filter to rows with completed manual labels
-    labeled = audit_df[audit_df["manual_label"].astype(str).str.strip() != ""].copy()
+    labeled = audit_df[audit_df["manual_label"].notna()].copy()
     labeled["manual_label"] = labeled["manual_label"].astype(str).str.strip().str.upper()
+    # Filter out empty or placeholder strings
+    labeled = labeled[~labeled["manual_label"].isin(["", "NAN", "NONE"])]
     if len(labeled) == 0:
         return None
 
-    # Check against SFT by default or first available policy
-    base_policy = "sft" if "sft" in judged_rows_map else next(iter(judged_rows_map.keys()), None)
-    if not base_policy:
-        return None
+    has_policy = "policy" in labeled.columns
 
-    judged_dict = {int(r["xstest_id"]): r.get("judge_label", "AMBIGUOUS") for r in judged_rows_map[base_policy]}
+    # Build lookup table: {policy: {xstest_id: judge_label}}
+    judged_dict = {}
+    for pol, rows in judged_rows_map.items():
+        judged_dict[pol] = {int(r["xstest_id"]): r.get("judge_label", "AMBIGUOUS") for r in rows}
 
-    agreements = 0
-    confusion = defaultdict(int)
+    overall_agreements = 0
+    overall_confusion = defaultdict(int)
     comparison_records = []
+    policy_agreements = defaultdict(int)
+    policy_totals = defaultdict(int)
+    policy_confusion = defaultdict(lambda: defaultdict(int))
 
     for _, row in labeled.iterrows():
         x_id = int(row["xstest_id"])
         man_lbl = row["manual_label"]
-        ai_lbl = judged_dict.get(x_id, "MISSING")
+        pol = str(row["policy"]).lower().strip() if has_policy and pd.notna(row.get("policy")) else "sft"
+
+        ai_lbl = judged_dict.get(pol, {}).get(x_id, "MISSING")
         match = (man_lbl == ai_lbl)
         if match:
-            agreements += 1
-        confusion[f"{man_lbl} -> {ai_lbl}"] += 1
+            overall_agreements += 1
+            policy_agreements[pol] += 1
+        policy_totals[pol] += 1
+        overall_confusion[f"{man_lbl} -> {ai_lbl}"] += 1
+        policy_confusion[pol][f"{man_lbl} -> {ai_lbl}"] += 1
+
         comparison_records.append({
             "xstest_id": x_id,
+            "policy": pol,
             "manual_label": man_lbl,
             "ai_judge_label": ai_lbl,
             "agreement": match,
         })
 
     n_labeled = len(labeled)
-    agreement_rate = float(agreements / n_labeled) if n_labeled > 0 else 0.0
+    overall_agreement_rate = float(overall_agreements / n_labeled) if n_labeled > 0 else 0.0
+
+    by_policy = {}
+    for pol, tot in policy_totals.items():
+        by_policy[pol] = {
+            "num_audited": tot,
+            "agreement_rate": float(policy_agreements[pol] / tot) if tot > 0 else 0.0,
+            "confusion_breakdown": dict(policy_confusion[pol]),
+        }
 
     return {
-        "reference_policy": base_policy,
         "num_audited": n_labeled,
-        "agreement_rate": agreement_rate,
-        "confusion_breakdown": dict(confusion),
+        "agreement_rate": overall_agreement_rate,
+        "confusion_breakdown": dict(overall_confusion),
+        "by_policy": by_policy,
         "comparisons": comparison_records,
     }
 
@@ -217,6 +237,10 @@ def run_safety_evaluation(config_path: str):
         print("Confusion breakdown:")
         for k, v in audit_summary["confusion_breakdown"].items():
             print(f"  {k}: {v}")
+        if "by_policy" in audit_summary and audit_summary["by_policy"]:
+            print("\nPer-policy agreement breakdown:")
+            for p, p_data in audit_summary["by_policy"].items():
+                print(f"  {p.upper()}: {p_data['agreement_rate']*100:.1f}% ({p_data['num_audited']} audited)")
         print("=" * 75 + "\n")
 
     return summary_output
