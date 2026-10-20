@@ -1,8 +1,184 @@
-\begin{thebibliography}{0}
+\begin{thebibliography}{22}
 \providecommand{\natexlab}[1]{#1}
 \providecommand{\url}[1]{\texttt{#1}}
 \expandafter\ifx\csname urlstyle\endcsname\relax
   \providecommand{\doi}[1]{doi: #1}\else
   \providecommand{\doi}{doi: \begingroup \urlstyle{rm}\Url}\fi
+
+\bibitem[Ouyang et~al.(2022)Ouyang, Wu, Jiang, Almeida, Wainwright, Mishkin,
+  Zhang, Agarwal, Slama, Ray, Schulman, Hilton, Kelton, Miller, Simens, Askell,
+  Welinder, Christiano, Leike, and Lowe]{ouyang2022instructgpt}
+Long Ouyang, Jeff Wu, Xu~Jiang, Diogo Almeida, Carroll~L. Wainwright, Pamela
+  Mishkin, Chong Zhang, Sandhini Agarwal, Katarina Slama, Alex Ray, John
+  Schulman, Jacob Hilton, Fraser Kelton, Luke Miller, Maddie Simens, Amanda
+  Askell, Peter Welinder, Paul Christiano, Jan Leike, and Ryan Lowe.
+\newblock Training language models to follow instructions with human feedback.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~35, 2022.
+
+\bibitem[Rafailov et~al.(2023)Rafailov, Sharma, Mitchell, Manning, Ermon, and
+  Finn]{rafailov2023dpo}
+Rafael Rafailov, Archit Sharma, Eric Mitchell, Christopher~D. Manning, Stefano
+  Ermon, and Chelsea Finn.
+\newblock Direct preference optimization: Your language model is secretly a
+  reward model.
+\newblock In \emph{Advances in Neural Information Processing Systems},
+  volume~36, 2023.
+
+\bibitem[Schulman et~al.(2017)Schulman, Wolski, Dhariwal, Radford, and
+  Klimov]{schulman2017ppo}
+John Schulman, Filip Wolski, Prafulla Dhariwal, Alec Radford, and Oleg Klimov.
+\newblock Proximal policy optimization algorithms.
+\newblock \emph{arXiv preprint arXiv:1707.06347}, 2017.
+
+\bibitem[Shao et~al.(2024)Shao, Wang, Zhu, Xu, Song, Bi, Zhang, Zhang, Li, Wu,
+  and Guo]{shao2024deepseekmath}
+Zhihong Shao, Peiyi Wang, Qihao Zhu, Runxin Xu, Junxiao Song, Xiao Bi, Haowei
+  Zhang, Mingchuan Zhang, Y.~K. Li, Y.~Wu, and Daya Guo.
+\newblock {DeepSeekMath}: Pushing the limits of mathematical reasoning in open
+  language models.
+\newblock \emph{arXiv preprint arXiv:2402.03300}, 2024.
+
+\bibitem[{Anthropic}(2023)]{anthropic2023evaluating}
+{Anthropic}.
+\newblock Challenges in evaluating {AI} systems.
+\newblock Anthropic, October 2023.
+\newblock URL \url{https://www.anthropic.com/news/evaluating-ai-systems}.
+\newblock Accessed 2026-10-20.
+
+\bibitem[{Qwen Team}(2024)]{qwen2025qwen25}
+{Qwen Team}.
+\newblock Qwen2.5 technical report.
+\newblock \emph{arXiv preprint arXiv:2412.15115}, 2024.
+
+\bibitem[Hu et~al.(2022)Hu, Shen, Wallis, Allen-Zhu, Li, Wang, Wang, and
+  Chen]{hu2022lora}
+Edward~J. Hu, Yelong Shen, Phillip Wallis, Zeyuan Allen-Zhu, Yuanzhi Li, Shean
+  Wang, Lu~Wang, and Weizhu Chen.
+\newblock {LoRA}: Low-rank adaptation of large language models.
+\newblock In \emph{International Conference on Learning Representations}, 2022.
+
+\bibitem[Cui et~al.(2024)Cui, Yuan, Ding, Yao, He, Zhu, Ni, Xie, Xie, Lin, Liu,
+  and Sun]{cui2024ultrafeedback}
+Ganqu Cui, Lifan Yuan, Ning Ding, Guanming Yao, Bingxiang He, Wei Zhu, Yuan Ni,
+  Guotong Xie, Ruobing Xie, Yankai Lin, Zhiyuan Liu, and Maosong Sun.
+\newblock {UltraFeedback}: Boosting language models with scaled {AI} feedback.
+\newblock In \emph{Proceedings of the 41st International Conference on Machine
+  Learning}, volume 235 of \emph{Proceedings of Machine Learning Research},
+  2024.
+
+\bibitem[{Course Staff, Advanced Topics in Machine
+  Learning}(2026{\natexlab{a}})]{atmlpa2starter}
+{Course Staff, Advanced Topics in Machine Learning}.
+\newblock {ATML-PA2-LLM-PostTraining}: Starter repository for programming
+  assignment 2.
+\newblock GitHub repository, 2026{\natexlab{a}}.
+\newblock URL \url{https://github.com/AbDu11aHHH/ATML-PA2-LLM-PostTraining}.
+
+\bibitem[{Course Staff, Advanced Topics in Machine
+  Learning}(2026{\natexlab{b}})]{atmlpa2assets}
+{Course Staff, Advanced Topics in Machine Learning}.
+\newblock {ATML-PA2-assets}: Course checkpoints, caches and fixed datasets.
+\newblock Hugging Face dataset repository, 2026{\natexlab{b}}.
+\newblock URL \url{https://huggingface.co/datasets/AbDu11aHHH/ATML-PA2-assets}.
+
+\bibitem[Gunton(2024)]{gunton2024understanding}
+Matthew Gunton.
+\newblock Understanding direct preference optimization.
+\newblock Medium (Towards Data Science), February 2024.
+\newblock URL
+  \url{https://medium.com/data-science/understanding-the-implications-of-direct-preference-optimization-a4bbd2d85841}.
+\newblock Accessed 2026-10-20.
+
+\bibitem[Wolfe(2023)]{wolfe2023ppo}
+Cameron~R. Wolfe.
+\newblock Proximal policy optimization ({PPO}): The key to {LLM} alignment.
+\newblock Deep (Learning) Focus (Substack), 2023.
+\newblock URL
+  \url{https://cameronrwolfe.substack.com/p/proximal-policy-optimization-ppo}.
+\newblock Accessed 2026-10-20.
+
+\bibitem[Huang et~al.(2023)Huang, Liu, and von Werra]{huang2023ndetails}
+Shengyi Huang, Tianlin Liu, and Leandro von Werra.
+\newblock The {N} implementation details of {RLHF} with {PPO}.
+\newblock Hugging Face Blog, October 2023.
+\newblock URL
+  \url{https://huggingface.co/blog/the_n_implementation_details_of_rlhf_with_ppo}.
+\newblock Accessed 2026-10-20.
+
+\bibitem[von Werra et~al.(2020)von Werra, Belkada, Tunstall, Beeching, Thrush,
+  Lambert, Huang, Rasul, and Gallou{\'e}dec]{vonwerra2020trl}
+Leandro von Werra, Younes Belkada, Lewis Tunstall, Edward Beeching, Tristan
+  Thrush, Nathan Lambert, Shengyi Huang, Kashif Rasul, and Quentin
+  Gallou{\'e}dec.
+\newblock {TRL}: Transformer reinforcement learning.
+\newblock GitHub repository, 2020.
+\newblock URL \url{https://github.com/huggingface/trl}.
+
+\bibitem[Liu et~al.(2025)Liu, Chen, Li, Qi, Pang, Du, Lee, and
+  Lin]{liu2025understanding}
+Zichen Liu, Changyu Chen, Wenjun Li, Penghui Qi, Tianyu Pang, Chao Du, Wee~Sun
+  Lee, and Min Lin.
+\newblock Understanding {R1-Zero-Like} training: A critical perspective.
+\newblock \emph{arXiv preprint arXiv:2503.20783}, 2025.
+
+\bibitem[R{\"o}ttger et~al.(2024)R{\"o}ttger, Kirk, Vidgen, Attanasio, Bianchi,
+  and Hovy]{rottger2024xstest}
+Paul R{\"o}ttger, Hannah~Rose Kirk, Bertie Vidgen, Giuseppe Attanasio, Federico
+  Bianchi, and Dirk Hovy.
+\newblock {XSTest}: A test suite for identifying exaggerated safety behaviours
+  in large language models.
+\newblock In \emph{Proceedings of the 2024 Conference of the North American
+  Chapter of the Association for Computational Linguistics: Human Language
+  Technologies}, 2024.
+
+\bibitem[Bianchi et~al.(2024)Bianchi, Suzgun, Attanasio, R{\"o}ttger, Jurafsky,
+  Hashimoto, and Zou]{bianchi2024safetytuned}
+Federico Bianchi, Mirac Suzgun, Giuseppe Attanasio, Paul R{\"o}ttger, Dan
+  Jurafsky, Tatsunori Hashimoto, and James Zou.
+\newblock Safety-tuned {LLaMAs}: Lessons from improving the safety of large
+  language models that follow instructions.
+\newblock In \emph{The Twelfth International Conference on Learning
+  Representations}, 2024.
+
+\bibitem[Bai et~al.(2022)Bai, Kadavath, Kundu, Askell, Kernion, Jones, Chen,
+  Goldie, Mirhoseini, McKinnon, et~al.]{bai2022constitutional}
+Yuntao Bai, Saurav Kadavath, Sandipan Kundu, Amanda Askell, Jackson Kernion,
+  Andy Jones, Anna Chen, Anna Goldie, Azalia Mirhoseini, Cameron McKinnon,
+  et~al.
+\newblock Constitutional {AI}: Harmlessness from {AI} feedback.
+\newblock \emph{arXiv preprint arXiv:2212.08073}, 2022.
+
+\bibitem[Cobbe et~al.(2021)Cobbe, Kosaraju, Bavarian, Chen, Jun, Kaiser,
+  Plappert, Tworek, Hilton, Nakano, Hesse, and Schulman]{cobbe2021gsm8k}
+Karl Cobbe, Vineet Kosaraju, Mohammad Bavarian, Mark Chen, Heewoo Jun, Lukasz
+  Kaiser, Matthias Plappert, Jerry Tworek, Jacob Hilton, Reiichiro Nakano,
+  Christopher Hesse, and John Schulman.
+\newblock Training verifiers to solve math word problems.
+\newblock \emph{arXiv preprint arXiv:2110.14168}, 2021.
+
+\bibitem[{DeepSeek-AI} et~al.(2025)]{deepseekai2025r1}
+{DeepSeek-AI} et~al.
+\newblock {DeepSeek-R1}: Incentivizing reasoning capability in {LLMs} via
+  reinforcement learning.
+\newblock \emph{arXiv preprint arXiv:2501.12948}, 2025.
+
+\bibitem[Lee et~al.(2024)Lee, Phatale, Mansoor, Mesnard, Ferret, Lu, Bishop,
+  Hall, Carbune, Rastogi, and Prakash]{lee2024rlaif}
+Harrison Lee, Samrat Phatale, Hassan Mansoor, Thomas Mesnard, Johan Ferret,
+  Kellie Lu, Colton Bishop, Ethan Hall, Victor Carbune, Abhinav Rastogi, and
+  Sushant Prakash.
+\newblock {RLAIF} vs. {RLHF}: Scaling reinforcement learning from human
+  feedback with {AI} feedback.
+\newblock In \emph{Proceedings of the 41st International Conference on Machine
+  Learning}, volume 235 of \emph{Proceedings of Machine Learning Research},
+  2024.
+
+\bibitem[Patel et~al.(2021)Patel, Bhattamishra, and Goyal]{patel2021svamp}
+Arkil Patel, Satwik Bhattamishra, and Navin Goyal.
+\newblock Are {NLP} models really able to solve simple math word problems?
+\newblock In \emph{Proceedings of the 2021 Conference of the North American
+  Chapter of the Association for Computational Linguistics: Human Language
+  Technologies}, 2021.
 
 \end{thebibliography}

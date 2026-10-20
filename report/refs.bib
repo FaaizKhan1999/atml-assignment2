@@ -1,136 +1,230 @@
-@misc{geirhos2022imagenettrainedcnnsbiasedtexture,
-      title={ImageNet-trained CNNs are biased towards texture; increasing shape bias improves accuracy and robustness}, 
-      author={Robert Geirhos and Patricia Rubisch and Claudio Michaelis and Matthias Bethge and Felix A. Wichmann and Wieland Brendel},
-      year={2022},
-      eprint={1811.12231},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/1811.12231}, 
+% ---------------------------------------------------------------------
+% REQUIRED READINGS (papers)
+% ---------------------------------------------------------------------
+ 
+% Task 1 -- DPO
+@inproceedings{rafailov2023dpo,
+  author    = {Rafailov, Rafael and Sharma, Archit and Mitchell, Eric and Manning, Christopher D. and Ermon, Stefano and Finn, Chelsea},
+  title     = {Direct Preference Optimization: Your Language Model is Secretly a Reward Model},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {36},
+  year      = {2023},
+  eprint    = {2305.18290},
+  archivePrefix = {arXiv}
 }
-@InProceedings{Huang_2017_ICCV,
-      author = {Huang, Xun and Belongie, Serge},
-      title = {Arbitrary Style Transfer in Real-Time With Adaptive Instance Normalization},
-      booktitle = {Proceedings of the IEEE International Conference on Computer Vision (ICCV)},
-      month = {Oct},
-      year = {2017}
+ 
+% Task 2 -- PPO
+@article{schulman2017ppo,
+  author  = {Schulman, John and Wolski, Filip and Dhariwal, Prafulla and Radford, Alec and Klimov, Oleg},
+  title   = {Proximal Policy Optimization Algorithms},
+  journal = {arXiv preprint arXiv:1707.06347},
+  year    = {2017}
 }
-@inproceedings{NEURIPS2021_652cf383,
-     author = {Raghu, Maithra and Unterthiner, Thomas and Kornblith, Simon and Zhang, Chiyuan and Dosovitskiy, Alexey},
-     booktitle = {Advances in Neural Information Processing Systems},
-     editor = {M. Ranzato and A. Beygelzimer and Y. Dauphin and P.S. Liang and J. Wortman Vaughan},
-     pages = {12116--12128},
-     publisher = {Curran Associates, Inc.},
-     title = {Do Vision Transformers See Like Convolutional Neural Networks?},
-     url = {https://proceedings.neurips.cc/paper_files/paper/2021/file/652cf38361a209088302ba2b8b7f51e0-Paper.pdf},
-     volume = {34},
-     year = {2021}
+ 
+% Task 2 -- RLHF pipeline
+@inproceedings{ouyang2022instructgpt,
+  author    = {Ouyang, Long and Wu, Jeff and Jiang, Xu and Almeida, Diogo and Wainwright, Carroll L. and Mishkin, Pamela and Zhang, Chong and Agarwal, Sandhini and Slama, Katarina and Ray, Alex and Schulman, John and Hilton, Jacob and Kelton, Fraser and Miller, Luke and Simens, Maddie and Askell, Amanda and Welinder, Peter and Christiano, Paul and Leike, Jan and Lowe, Ryan},
+  title     = {Training Language Models to Follow Instructions with Human Feedback},
+  booktitle = {Advances in Neural Information Processing Systems},
+  volume    = {35},
+  year      = {2022},
+  eprint    = {2203.02155},
+  archivePrefix = {arXiv}
 }
-@article{JMLR:v17:15-239,
-  author  = {Yaroslav Ganin and Evgeniya Ustinova and Hana Ajakan and Pascal Germain and Hugo Larochelle and Fran{\c{c}}ois Laviolette and Mario March and Victor Lempitsky},
-  title   = {Domain-Adversarial Training of Neural Networks},
-  journal = {Journal of Machine Learning Research},
-  year    = {2016},
-  volume  = {17},
-  number  = {59},
-  pages   = {1--35},
-  url     = {http://jmlr.org/papers/v17/15-239.html}
+ 
+% Task 3 -- GRPO
+@article{shao2024deepseekmath,
+  author  = {Shao, Zhihong and Wang, Peiyi and Zhu, Qihao and Xu, Runxin and Song, Junxiao and Bi, Xiao and Zhang, Haowei and Zhang, Mingchuan and Li, Y. K. and Wu, Y. and Guo, Daya},
+  title   = {{DeepSeekMath}: Pushing the Limits of Mathematical Reasoning in Open Language Models},
+  journal = {arXiv preprint arXiv:2402.03300},
+  year    = {2024}
 }
-@inproceedings{NEURIPS2018_ab88b157,
- author = {Long, Mingsheng and CAO, ZHANGJIE and Wang, Jianmin and Jordan, Michael},
- booktitle = {Advances in Neural Information Processing Systems},
- editor = {S. Bengio and H. Wallach and H. Larochelle and K. Grauman and N. Cesa-Bianchi and R. Garnett},
- pages = {},
- publisher = {Curran Associates, Inc.},
- title = {Conditional Adversarial Domain Adaptation},
- url = {https://proceedings.neurips.cc/paper_files/paper/2018/file/ab88b15733f543179858600245108dd8-Paper.pdf},
- volume = {31},
- year = {2018}
+ 
+% Task 3 -- Dr. GRPO
+@article{liu2025understanding,
+  author  = {Liu, Zichen and Chen, Changyu and Li, Wenjun and Qi, Penghui and Pang, Tianyu and Du, Chao and Lee, Wee Sun and Lin, Min},
+  title   = {Understanding {R1-Zero-Like} Training: A Critical Perspective},
+  journal = {arXiv preprint arXiv:2503.20783},
+  year    = {2025}
 }
-@InProceedings{pmlr-v37-long15,
-  title = 	 {Learning Transferable Features with Deep Adaptation Networks},
-  author = 	 {Long, Mingsheng and Cao, Yue and Wang, Jianmin and Jordan, Michael},
-  booktitle = 	 {Proceedings of the 32nd International Conference on Machine Learning},
-  pages = 	 {97--105},
-  year = 	 {2015},
-  editor = 	 {Bach, Francis and Blei, David},
-  volume = 	 {37},
-  series = 	 {Proceedings of Machine Learning Research},
-  address = 	 {Lille, France},
-  month = 	 {07--09 Jul},
-  publisher =    {PMLR},
-  pdf = 	 {http://proceedings.mlr.press/v37/long15.pdf},
-  url = 	 {https://proceedings.mlr.press/v37/long15.html}, 
+ 
+% Tasks 3 and 5 -- DeepSeek-R1 (also appeared in Nature, 2025)
+@article{deepseekai2025r1,
+  author  = {{DeepSeek-AI} and others},
+  title   = {{DeepSeek-R1}: Incentivizing Reasoning Capability in {LLMs} via Reinforcement Learning},
+  journal = {arXiv preprint arXiv:2501.12948},
+  year    = {2025}
 }
-@InProceedings{pmlr-v97-zhao19a,
-  title = 	 {On Learning Invariant Representations for Domain Adaptation},
-  author =       {Zhao, Han and Combes, Remi Tachet Des and Zhang, Kun and Gordon, Geoffrey},
-  booktitle = 	 {Proceedings of the 36th International Conference on Machine Learning},
-  pages = 	 {7523--7532},
-  year = 	 {2019},
-  editor = 	 {Chaudhuri, Kamalika and Salakhutdinov, Ruslan},
-  volume = 	 {97},
-  series = 	 {Proceedings of Machine Learning Research},
-  month = 	 {09--15 Jun},
-  publisher =    {PMLR},
-  pdf = 	 {http://proceedings.mlr.press/v97/zhao19a/zhao19a.pdf},
-  url = 	 {https://proceedings.mlr.press/v97/zhao19a.html},
+ 
+% Task 4 -- XSTest
+@inproceedings{rottger2024xstest,
+  author    = {R{\"o}ttger, Paul and Kirk, Hannah Rose and Vidgen, Bertie and Attanasio, Giuseppe and Bianchi, Federico and Hovy, Dirk},
+  title     = {{XSTest}: A Test Suite for Identifying Exaggerated Safety Behaviours in Large Language Models},
+  booktitle = {Proceedings of the 2024 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies},
+  year      = {2024},
+  eprint    = {2308.01263},
+  archivePrefix = {arXiv}
 }
-@inproceedings{
-foret2021sharpnessaware,
-title={Sharpness-aware Minimization for Efficiently Improving Generalization},
-author={Pierre Foret and Ariel Kleiner and Hossein Mobahi and Behnam Neyshabur},
-booktitle={International Conference on Learning Representations},
-year={2021},
-url={https://openreview.net/forum?id=6Tm1mposlrM}
+ 
+% Task 5 -- RLAIF vs RLHF
+@inproceedings{lee2024rlaif,
+  author    = {Lee, Harrison and Phatale, Samrat and Mansoor, Hassan and Mesnard, Thomas and Ferret, Johan and Lu, Kellie and Bishop, Colton and Hall, Ethan and Carbune, Victor and Rastogi, Abhinav and Prakash, Sushant},
+  title     = {{RLAIF} vs. {RLHF}: Scaling Reinforcement Learning from Human Feedback with {AI} Feedback},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {235},
+  year      = {2024},
+  eprint    = {2309.00267},
+  archivePrefix = {arXiv}
 }
-@inproceedings{
-gulrajani2021in,
-title={In Search of Lost Domain Generalization},
-author={Ishaan Gulrajani and David Lopez-Paz},
-booktitle={International Conference on Learning Representations},
-year={2021},
-url={https://openreview.net/forum?id=lQdXeXDoWtI}
+ 
+ 
+% ---------------------------------------------------------------------
+% OPTIONAL READINGS (papers)
+% ---------------------------------------------------------------------
+ 
+% Task 4 -- Safety-Tuned LLaMAs
+@inproceedings{bianchi2024safetytuned,
+  author    = {Bianchi, Federico and Suzgun, Mirac and Attanasio, Giuseppe and R{\"o}ttger, Paul and Jurafsky, Dan and Hashimoto, Tatsunori and Zou, James},
+  title     = {Safety-Tuned {LLaMAs}: Lessons From Improving the Safety of Large Language Models that Follow Instructions},
+  booktitle = {The Twelfth International Conference on Learning Representations},
+  year      = {2024},
+  eprint    = {2309.07875},
+  archivePrefix = {arXiv}
 }
-@InProceedings{Zhou_2021_CVPR,
-    author    = {Zhou, Da-Wei and Ye, Han-Jia and Zhan, De-Chuan},
-    title     = {Learning Placeholders for Open-Set Recognition},
-    booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR)},
-    month     = {June},
-    year      = {2021},
-    pages     = {4401-4410}
+ 
+% Task 5 -- Constitutional AI
+@article{bai2022constitutional,
+  author  = {Bai, Yuntao and Kadavath, Saurav and Kundu, Sandipan and Askell, Amanda and Kernion, Jackson and Jones, Andy and Chen, Anna and Goldie, Anna and Mirhoseini, Azalia and McKinnon, Cameron and others},
+  title   = {Constitutional {AI}: Harmlessness from {AI} Feedback},
+  journal = {arXiv preprint arXiv:2212.08073},
+  year    = {2022}
 }
-@misc{vaze2022opensetrecognitiongoodclosedset,
-      title={Open-Set Recognition: a Good Closed-Set Classifier is All You Need?}, 
-      author={Sagar Vaze and Kai Han and Andrea Vedaldi and Andrew Zisserman},
-      year={2022},
-      eprint={2110.06207},
-      archivePrefix={arXiv},
-      primaryClass={cs.CV},
-      url={https://arxiv.org/abs/2110.06207}, 
+ 
+ 
+% ---------------------------------------------------------------------
+% OPTIONAL READINGS (web pages) -- URLs checked by search on 2026-10-20
+% ---------------------------------------------------------------------
+ 
+% Task 1 -- NOTE: originally a Medium / Towards Data Science post
+@misc{gunton2024understanding,
+  author       = {Gunton, Matthew},
+  title        = {Understanding Direct Preference Optimization},
+  year         = {2024},
+  month        = feb,
+  howpublished = {Medium (Towards Data Science)},
+  url          = {https://medium.com/data-science/understanding-the-implications-of-direct-preference-optimization-a4bbd2d85841},
+  note         = {Accessed 2026-10-20}
 }
-@inproceedings{NEURIPS2020_f5496252,
- author = {Liu, Weitang and Wang, Xiaoyun and Owens, John and Li, Yixuan},
- booktitle = {Advances in Neural Information Processing Systems},
- editor = {H. Larochelle and M. Ranzato and R. Hadsell and M.F. Balcan and H. Lin},
- pages = {21464--21475},
- publisher = {Curran Associates, Inc.},
- title = {Energy-based Out-of-distribution Detection},
- url = {https://proceedings.neurips.cc/paper_files/paper/2020/file/f5496252609c43eb8a3d147ab9b9c006-Paper.pdf},
- volume = {33},
- year = {2020}
+ 
+% Task 2 -- NOTE: this is hosted on Substack, not Medium as the assignment states.
+% Year is from memory (autumn 2023); confirm the date on the page.
+@misc{wolfe2023ppo,
+  author       = {Wolfe, Cameron R.},
+  title        = {Proximal Policy Optimization ({PPO}): The Key to {LLM} Alignment},
+  year         = {2023},
+  howpublished = {Deep (Learning) Focus (Substack)},
+  url          = {https://cameronrwolfe.substack.com/p/proximal-policy-optimization-ppo},
+  note         = {Accessed 2026-10-20}
 }
-@inproceedings{
-hendrycks2017a,
-title={A Baseline for Detecting Misclassified and Out-of-Distribution Examples in Neural Networks},
-author={Dan Hendrycks and Kevin Gimpel},
-booktitle={International Conference on Learning Representations},
-year={2017},
-url={https://openreview.net/forum?id=Hkg4TI9xl}
+ 
+% Task 2 -- also published in the ICLR 2024 Blogposts Track
+@misc{huang2023ndetails,
+  author       = {Huang, Shengyi and Liu, Tianlin and von Werra, Leandro},
+  title        = {The {N} Implementation Details of {RLHF} with {PPO}},
+  year         = {2023},
+  month        = oct,
+  howpublished = {Hugging Face Blog},
+  url          = {https://huggingface.co/blog/the_n_implementation_details_of_rlhf_with_ppo},
+  note         = {Accessed 2026-10-20}
 }
-@inproceedings{Chen2020,
-  author    = {Chen, Guangyao and Qiao, Limeng and Shi, Yemin and Peng, Peixi and Li, Jia and Huang, Tiejun and Pu, Shiliang and Tian, Yonghong},
-  title     = {Learning Open Set Network with Discriminative Reciprocal Points},
-  booktitle = {ECCV 2020},
-  year      = {2020},
-  doi       = {10.1007/978-3-030-58580-8_30}
+ 
+% Task 4
+@misc{anthropic2023evaluating,
+  author       = {{Anthropic}},
+  title        = {Challenges in Evaluating {AI} Systems},
+  year         = {2023},
+  month        = oct,
+  howpublished = {Anthropic},
+  url          = {https://www.anthropic.com/news/evaluating-ai-systems},
+  note         = {Accessed 2026-10-20}
+}
+ 
+ 
+% ---------------------------------------------------------------------
+% COURSE MATERIALS (URLs taken directly from the assignment PDF)
+% ---------------------------------------------------------------------
+ 
+@misc{atmlpa2starter,
+  title        = {{ATML-PA2-LLM-PostTraining}: Starter Repository for Programming Assignment 2},
+  author       = {{Course Staff, Advanced Topics in Machine Learning}},
+  year         = {2026},
+  howpublished = {GitHub repository},
+  url          = {https://github.com/AbDu11aHHH/ATML-PA2-LLM-PostTraining}
+}
+ 
+@misc{atmlpa2assets,
+  title        = {{ATML-PA2-assets}: Course Checkpoints, Caches and Fixed Datasets},
+  author       = {{Course Staff, Advanced Topics in Machine Learning}},
+  year         = {2026},
+  howpublished = {Hugging Face dataset repository},
+  url          = {https://huggingface.co/datasets/AbDu11aHHH/ATML-PA2-assets}
+}
+ 
+ 
+% ---------------------------------------------------------------------
+% MODELS, DATASETS AND METHODS USED BUT NOT LISTED AS READINGS
+% (the assignment names these; cite them in your setup section)
+% ---------------------------------------------------------------------
+ 
+@inproceedings{hu2022lora,
+  author    = {Hu, Edward J. and Shen, Yelong and Wallis, Phillip and Allen-Zhu, Zeyuan and Li, Yuanzhi and Wang, Shean and Wang, Lu and Chen, Weizhu},
+  title     = {{LoRA}: Low-Rank Adaptation of Large Language Models},
+  booktitle = {International Conference on Learning Representations},
+  year      = {2022},
+  eprint    = {2106.09685},
+  archivePrefix = {arXiv}
+}
+ 
+@inproceedings{cui2024ultrafeedback,
+  author    = {Cui, Ganqu and Yuan, Lifan and Ding, Ning and Yao, Guanming and He, Bingxiang and Zhu, Wei and Ni, Yuan and Xie, Guotong and Xie, Ruobing and Lin, Yankai and Liu, Zhiyuan and Sun, Maosong},
+  title     = {{UltraFeedback}: Boosting Language Models with Scaled {AI} Feedback},
+  booktitle = {Proceedings of the 41st International Conference on Machine Learning},
+  series    = {Proceedings of Machine Learning Research},
+  volume    = {235},
+  year      = {2024},
+  eprint    = {2310.01377},
+  archivePrefix = {arXiv}
+}
+ 
+@article{cobbe2021gsm8k,
+  author  = {Cobbe, Karl and Kosaraju, Vineet and Bavarian, Mohammad and Chen, Mark and Jun, Heewoo and Kaiser, Lukasz and Plappert, Matthias and Tworek, Jerry and Hilton, Jacob and Nakano, Reiichiro and Hesse, Christopher and Schulman, John},
+  title   = {Training Verifiers to Solve Math Word Problems},
+  journal = {arXiv preprint arXiv:2110.14168},
+  year    = {2021}
+}
+ 
+@inproceedings{patel2021svamp,
+  author    = {Patel, Arkil and Bhattamishra, Satwik and Goyal, Navin},
+  title     = {Are {NLP} Models really able to Solve Simple Math Word Problems?},
+  booktitle = {Proceedings of the 2021 Conference of the North American Chapter of the Association for Computational Linguistics: Human Language Technologies},
+  year      = {2021},
+  eprint    = {2103.07191},
+  archivePrefix = {arXiv}
+}
+ 
+@article{qwen2025qwen25,
+  author  = {{Qwen Team}},
+  title   = {Qwen2.5 Technical Report},
+  journal = {arXiv preprint arXiv:2412.15115},
+  year    = {2024}
+}
+ 
+% TRL library (the assignment's optional reading is its DPO Trainer docs page)
+@misc{vonwerra2020trl,
+  author       = {von Werra, Leandro and Belkada, Younes and Tunstall, Lewis and Beeching, Edward and Thrush, Tristan and Lambert, Nathan and Huang, Shengyi and Rasul, Kashif and Gallou{\'e}dec, Quentin},
+  title        = {{TRL}: Transformer Reinforcement Learning},
+  year         = {2020},
+  howpublished = {GitHub repository},
+  url          = {https://github.com/huggingface/trl}
 }

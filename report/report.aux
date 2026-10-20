@@ -2,11 +2,194 @@
 \providecommand\hyper@newdestlabel[2]{}
 \providecommand\HyField@AuxAddToFields[1]{}
 \providecommand\HyField@AuxAddToCoFields[2]{}
+\citation{ouyang2022instructgpt}
+\citation{rafailov2023dpo}
+\citation{schulman2017ppo,ouyang2022instructgpt}
+\citation{shao2024deepseekmath}
+\citation{anthropic2023evaluating}
 \@writefile{toc}{\contentsline {section}{\numberline {1}Introduction}{1}{section.1}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {2}Experimental Setup and Methods}{1}{section.2}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {3}Results and Analysis}{1}{section.3}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {4}Cross-Task Analysis}{1}{section.4}\protected@file@percent }
-\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{1}{section.5}\protected@file@percent }
+\citation{qwen2025qwen25}
+\citation{qwen2025qwen25}
+\citation{hu2022lora}
+\citation{cui2024ultrafeedback}
+\citation{atmlpa2starter,atmlpa2assets}
+\@writefile{toc}{\contentsline {section}{\numberline {2}Experimental Setup and Methods}{2}{section.2}\protected@file@percent }
+\newlabel{sec:setup}{{2}{2}{Experimental Setup and Methods}{section.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.1}Study Design and Shared Setup}{2}{subsection.2.1}\protected@file@percent }
+\newlabel{sec:setup_preface}{{2.1}{2}{Study Design and Shared Setup}{subsection.2.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Shared Model Setup}{2}{section*.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Trained versus Supplied Components}{2}{section*.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Datasets and Sample Sizes}{2}{section*.4}\protected@file@percent }
+\citation{rafailov2023dpo,gunton2024understanding}
+\citation{schulman2017ppo,ouyang2022instructgpt,wolfe2023ppo,huang2023ndetails,vonwerra2020trl}
+\citation{shao2024deepseekmath}
+\citation{shao2024deepseekmath}
+\citation{liu2025understanding}
+\citation{rottger2024xstest,bianchi2024safetytuned,bai2022constitutional}
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.2}Optimization Algorithms}{3}{subsection.2.2}\protected@file@percent }
+\newlabel{sec:setup_algorithms}{{2.2}{3}{Optimization Algorithms}{subsection.2.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Direct Preference Optimization (DPO)}{3}{section*.5}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Proximal Policy Optimization (PPO)}{3}{section*.6}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Group Relative Policy Optimization (GRPO)}{3}{section*.7}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Diagnostic Metrics and Difficulty Bins}{3}{section*.8}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {2.3}Safety Evaluation and Feedback Sources}{3}{subsection.2.3}\protected@file@percent }
+\newlabel{sec:setup_safety_feedback}{{2.3}{3}{Safety Evaluation and Feedback Sources}{subsection.2.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Safety Calibration Protocol}{3}{section*.9}\protected@file@percent }
+\citation{cobbe2021gsm8k,deepseekai2025r1,lee2024rlaif}
+\citation{patel2021svamp}
+\@writefile{toc}{\contentsline {paragraph}{Feedback Sources: Exact Verification versus AI Preferences}{4}{section*.10}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {3}Results and Analysis}{4}{section.3}\protected@file@percent }
+\newlabel{sec:results}{{3}{4}{Results and Analysis}{section.3}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.1}Direct Preference Optimization and Length Confounding}{4}{subsection.3.1}\protected@file@percent }
+\newlabel{sec:results_dpo}{{3.1}{4}{Direct Preference Optimization and Length Confounding}{subsection.3.1}{}}
+\@writefile{toc}{\contentsline {paragraph}{Regularization Sensitivity}{4}{section*.11}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Length Confounding and Implicit Margins}{4}{section*.12}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Reward Model Discrepancies}{4}{section*.14}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {1}{\ignorespaces Held-out evaluation across length strata ($N = 237$) and word-limit compliance for standard and length-balanced DPO policies. Evaluated on $N = 237$ valid pairs from \texttt  {dpo\_length\_stratified\_eval} (filtered from 82 pairs per stratum due to prompts exceeding sequence length limits: 78 preferred-longer, 80 length-matched, 79 rejected-longer). Accuracy reports correct implicit margins ($m_\theta > 0$), and the overall row reconciles to the exact sum of the evaluated strata.}}{5}{table.caption.13}\protected@file@percent }
+\providecommand*\caption@xref[2]{\@setref\relax\@undefined{#1}}
+\newlabel{tab:dpo_strata_summary}{{1}{5}{Held-out evaluation across length strata ($N = 237$) and word-limit compliance for standard and length-balanced DPO policies. Evaluated on $N = 237$ valid pairs from \texttt {dpo\_length\_stratified\_eval} (filtered from 82 pairs per stratum due to prompts exceeding sequence length limits: 78 preferred-longer, 80 length-matched, 79 rejected-longer). Accuracy reports correct implicit margins ($m_\theta > 0$), and the overall row reconciles to the exact sum of the evaluated strata}{table.caption.13}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {2}{\ignorespaces Operational and held-out evaluation across PPO clipping thresholds ($\epsilon $) and reference KL penalties ($\beta _{\text  {KL}}$) on \texttt  {rl\_prompt\_pool\_eval} ($N = 200$). The midpoint baseline was not precomputed on held-out prompts ($N=200$); on 32 cached rollouts, its reward is $1.104$ with length $275.4$. The default fork row reflects the bit-identical trajectory shared by $\epsilon = 0.20$, $\epsilon = 0.50$, and $\beta _{\text  {KL}} = 0.10$. Cached clip fraction measures tokens bounded on cached rollouts.}}{5}{table.caption.16}\protected@file@percent }
+\newlabel{tab:ppo_ablations_summary}{{2}{5}{Operational and held-out evaluation across PPO clipping thresholds ($\epsilon $) and reference KL penalties ($\beta _{\text {KL}}$) on \texttt {rl\_prompt\_pool\_eval} ($N = 200$). The midpoint baseline was not precomputed on held-out prompts ($N=200$); on 32 cached rollouts, its reward is $1.104$ with length $275.4$. The default fork row reflects the bit-identical trajectory shared by $\epsilon = 0.20$, $\epsilon = 0.50$, and $\beta _{\text {KL}} = 0.10$. Cached clip fraction measures tokens bounded on cached rollouts}{table.caption.16}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.2}Online Policy Optimization Dynamics and Clipping Bounds}{5}{subsection.3.2}\protected@file@percent }
+\newlabel{sec:results_ppo}{{3.2}{5}{Online Policy Optimization Dynamics and Clipping Bounds}{subsection.3.2}{}}
+\@writefile{toc}{\contentsline {paragraph}{Ratio Clipping Bounds and Stability}{5}{section*.15}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{KL Divergence Pressure and Mode Concentration}{5}{section*.17}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.3}Critic-Free Policy Optimization and Group Informativeness}{5}{subsection.3.3}\protected@file@percent }
+\newlabel{sec:results_grpo}{{3.3}{5}{Critic-Free Policy Optimization and Group Informativeness}{subsection.3.3}{}}
+\@writefile{toc}{\contentsline {paragraph}{Group Size Scaling and Informativeness Plateau}{5}{section*.18}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {3}{\ignorespaces Operational and held-out evaluation across GRPO sequence length normalization schemes on \texttt  {rl\_prompt\_pool\_eval} ($N = 200$). The canonical fork trajectory is bit-identical to the first 8 updates of the standard run. Training lengths are capped at 512 tokens, whereas qualitative evaluation completions use a 768 token limit. Nonzero gradient norm reports the mean over active updates (excluding masked no-op update 5 for canonical, and updates 5, 13, 15, and 17 for standard 20 updates).}}{6}{table.caption.19}\protected@file@percent }
+\newlabel{tab:grpo_normalization_summary}{{3}{6}{Operational and held-out evaluation across GRPO sequence length normalization schemes on \texttt {rl\_prompt\_pool\_eval} ($N = 200$). The canonical fork trajectory is bit-identical to the first 8 updates of the standard run. Training lengths are capped at 512 tokens, whereas qualitative evaluation completions use a 768 token limit. Nonzero gradient norm reports the mean over active updates (excluding masked no-op update 5 for canonical, and updates 5, 13, 15, and 17 for standard 20 updates)}{table.caption.19}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {4}{\ignorespaces Safety calibration and refusal behavior across policies on XSTest ($N = 450$; 250 safe, 200 unsafe). Safe JR Share measures benign prompts labeled as justified refusals by the judge. The 3B judge never emitted \texttt  {OVER\_REFUSAL} or \texttt  {AMBIGUOUS} (0.0\%), and never emitted \texttt  {UNSAFE\_COMPLIANCE} on unsafe prompts (0.0\%).}}{6}{table.caption.22}\protected@file@percent }
+\newlabel{tab:safety_overview}{{4}{6}{Safety calibration and refusal behavior across policies on XSTest ($N = 450$; 250 safe, 200 unsafe). Safe JR Share measures benign prompts labeled as justified refusals by the judge. The 3B judge never emitted \texttt {OVER\_REFUSAL} or \texttt {AMBIGUOUS} (0.0\%), and never emitted \texttt {UNSAFE\_COMPLIANCE} on unsafe prompts (0.0\%)}{table.caption.22}{}}
+\@writefile{toc}{\contentsline {paragraph}{Sequence Normalization and Step-Size Dampening}{6}{section*.20}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Zero-Gradient Masking and Optimization Stability}{6}{section*.21}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.4}Safety Alignment and Refusal Calibration on XSTest}{6}{subsection.3.4}\protected@file@percent }
+\newlabel{sec:results_safety}{{3.4}{6}{Safety Alignment and Refusal Calibration on XSTest}{subsection.3.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{Safety Invariance Under Post-Training Optimization}{6}{section*.23}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Lexical Sensitivity and Inherited Refusal Patterns}{6}{section*.24}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {5}{\ignorespaces In-domain evaluation on GSM8K ($N = 300$). Strict accuracy requires the designated delimiter \texttt  {\#\#\#\# <number>}. Compliant accuracy evaluates only responses containing the delimiter. Lenient accuracy checks whether the last numerical value in the response matches the gold answer. Pairwise win rates against SFT count wins as 1, ties as 0.5, and losses as 0. Non-identical pairs subset comparisons where policy completions differ from SFT. Strict pairs report instances where verifier correctness changes relative to SFT, alongside verifier--judge agreement (where judge ties count as non-agreements).}}{7}{table.caption.26}\protected@file@percent }
+\newlabel{tab:gsm_results}{{5}{7}{In-domain evaluation on GSM8K ($N = 300$). Strict accuracy requires the designated delimiter \texttt {\#\#\#\# <number>}. Compliant accuracy evaluates only responses containing the delimiter. Lenient accuracy checks whether the last numerical value in the response matches the gold answer. Pairwise win rates against SFT count wins as 1, ties as 0.5, and losses as 0. Non-identical pairs subset comparisons where policy completions differ from SFT. Strict pairs report instances where verifier correctness changes relative to SFT, alongside verifier--judge agreement (where judge ties count as non-agreements)}{table.caption.26}{}}
+\@writefile{toc}{\contentsline {paragraph}{Automated Judge Pathologies and Evaluation Reliability}{7}{section*.25}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {3.5}Feedback Sources: Exact Verification versus AI Preferences}{7}{subsection.3.5}\protected@file@percent }
+\newlabel{sec:results_feedback}{{3.5}{7}{Feedback Sources: Exact Verification versus AI Preferences}{subsection.3.5}{}}
+\@writefile{toc}{\contentsline {paragraph}{In-Domain Accuracy and the Format Confound}{7}{section*.27}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Diagnostic Perturbation Sensitivity and Evaluator Divergence}{7}{section*.28}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Out-of-Domain Transfer and Feedback Trade-offs}{7}{section*.29}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {4}Cross-Method Analysis}{8}{section.4}\protected@file@percent }
+\newlabel{sec:cross_task}{{4}{8}{Cross-Method Analysis}{section.4}{}}
+\@writefile{toc}{\contentsline {paragraph}{Preference Strength versus Policy Drift}{8}{section*.30}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Offline versus Online Feedback Mechanisms}{8}{section*.31}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Optimization Bias and Confounded Objectives}{8}{section*.32}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Safety Calibration and Metric Decoupling}{8}{section*.33}\protected@file@percent }
+\@writefile{toc}{\contentsline {paragraph}{Limitations}{8}{section*.34}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {5}Conclusion}{8}{section.5}\protected@file@percent }
+\newlabel{sec:conclusion}{{5}{8}{Conclusion}{section.5}{}}
 \bibstyle{unsrtnat}
+\citation{*}
 \bibdata{refs}
-\gdef \@abspage@last{2}
+\bibcite{ouyang2022instructgpt}{{1}{2022}{{Ouyang et~al.}}{{Ouyang, Wu, Jiang, Almeida, Wainwright, Mishkin, Zhang, Agarwal, Slama, Ray, Schulman, Hilton, Kelton, Miller, Simens, Askell, Welinder, Christiano, Leike, and Lowe}}}
+\bibcite{rafailov2023dpo}{{2}{2023}{{Rafailov et~al.}}{{Rafailov, Sharma, Mitchell, Manning, Ermon, and Finn}}}
+\bibcite{schulman2017ppo}{{3}{2017}{{Schulman et~al.}}{{Schulman, Wolski, Dhariwal, Radford, and Klimov}}}
+\bibcite{shao2024deepseekmath}{{4}{2024}{{Shao et~al.}}{{Shao, Wang, Zhu, Xu, Song, Bi, Zhang, Zhang, Li, Wu, and Guo}}}
+\bibcite{anthropic2023evaluating}{{5}{2023}{{Anthropic}}{{}}}
+\bibcite{qwen2025qwen25}{{6}{2024}{{Qwen Team}}{{}}}
+\bibcite{hu2022lora}{{7}{2022}{{Hu et~al.}}{{Hu, Shen, Wallis, Allen-Zhu, Li, Wang, Wang, and Chen}}}
+\bibcite{cui2024ultrafeedback}{{8}{2024}{{Cui et~al.}}{{Cui, Yuan, Ding, Yao, He, Zhu, Ni, Xie, Xie, Lin, Liu, and Sun}}}
+\bibcite{atmlpa2starter}{{9}{2026{a}}{{Course Staff, Advanced Topics in Machine Learning}}{{}}}
+\bibcite{atmlpa2assets}{{10}{2026{b}}{{Course Staff, Advanced Topics in Machine Learning}}{{}}}
+\bibcite{gunton2024understanding}{{11}{2024}{{Gunton}}{{}}}
+\bibcite{wolfe2023ppo}{{12}{2023}{{Wolfe}}{{}}}
+\bibcite{huang2023ndetails}{{13}{2023}{{Huang et~al.}}{{Huang, Liu, and von Werra}}}
+\bibcite{vonwerra2020trl}{{14}{2020}{{von Werra et~al.}}{{von Werra, Belkada, Tunstall, Beeching, Thrush, Lambert, Huang, Rasul, and Gallou{\'e}dec}}}
+\bibcite{liu2025understanding}{{15}{2025}{{Liu et~al.}}{{Liu, Chen, Li, Qi, Pang, Du, Lee, and Lin}}}
+\bibcite{rottger2024xstest}{{16}{2024}{{R{\"o}ttger et~al.}}{{R{\"o}ttger, Kirk, Vidgen, Attanasio, Bianchi, and Hovy}}}
+\bibcite{bianchi2024safetytuned}{{17}{2024}{{Bianchi et~al.}}{{Bianchi, Suzgun, Attanasio, R{\"o}ttger, Jurafsky, Hashimoto, and Zou}}}
+\bibcite{bai2022constitutional}{{18}{2022}{{Bai et~al.}}{{Bai, Kadavath, Kundu, Askell, Kernion, Jones, Chen, Goldie, Mirhoseini, McKinnon, et~al.}}}
+\bibcite{cobbe2021gsm8k}{{19}{2021}{{Cobbe et~al.}}{{Cobbe, Kosaraju, Bavarian, Chen, Jun, Kaiser, Plappert, Tworek, Hilton, Nakano, Hesse, and Schulman}}}
+\bibcite{deepseekai2025r1}{{20}{2025}{{{DeepSeek-AI} et~al.}}{{}}}
+\bibcite{lee2024rlaif}{{21}{2024}{{Lee et~al.}}{{Lee, Phatale, Mansoor, Mesnard, Ferret, Lu, Bishop, Hall, Carbune, Rastogi, and Prakash}}}
+\bibcite{patel2021svamp}{{22}{2021}{{Patel et~al.}}{{Patel, Bhattamishra, and Goyal}}}
+\@writefile{toc}{\contentsline {section}{\numberline {A}Optimization Algorithms: Formulations and Procedures}{11}{appendix.A}\protected@file@percent }
+\newlabel{app:algorithms}{{A}{11}{Optimization Algorithms: Formulations and Procedures}{appendix.A}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.1}Direct Preference Optimization (DPO)}{11}{subsection.A.1}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {1}{\ignorespaces Direct Preference Optimization (DPO) with Stratified Sampling}}{11}{algorithm.1}\protected@file@percent }
+\newlabel{alg:dpo}{{1}{11}{Direct Preference Optimization (DPO) with Stratified Sampling}{algorithm.1}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.2}Proximal Policy Optimization (PPO)}{12}{subsection.A.2}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {2}{\ignorespaces PPO Token-Level Continuation with GAE and Ratio Clipping}}{12}{algorithm.2}\protected@file@percent }
+\newlabel{alg:ppo}{{2}{12}{PPO Token-Level Continuation with GAE and Ratio Clipping}{algorithm.2}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {A.3}Group Relative Policy Optimization (GRPO)}{13}{subsection.A.3}\protected@file@percent }
+\@writefile{loa}{\contentsline {algorithm}{\numberline {3}{\ignorespaces Group Relative Policy Optimization (GRPO) Continuation}}{13}{algorithm.3}\protected@file@percent }
+\newlabel{alg:grpo}{{3}{13}{Group Relative Policy Optimization (GRPO) Continuation}{algorithm.3}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {B}Experimental Setup and Hyperparameter Reference}{14}{appendix.B}\protected@file@percent }
+\newlabel{app:hyperparameters}{{B}{14}{Experimental Setup and Hyperparameter Reference}{appendix.B}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {6}{\ignorespaces Overview of experimental settings, optimization budgets, controlled factors, and evaluation datasets across offline and online post-training regimes. Within each setting, fixed prompt pools, seeds, and architectures isolate individual algorithmic parameters, data strata, and feedback sources.}}{14}{table.caption.36}\protected@file@percent }
+\newlabel{tab:task_overview}{{6}{14}{Overview of experimental settings, optimization budgets, controlled factors, and evaluation datasets across offline and online post-training regimes. Within each setting, fixed prompt pools, seeds, and architectures isolate individual algorithmic parameters, data strata, and feedback sources}{table.caption.36}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.1}LoRA Parameterization and Model Architectures}{14}{subsection.B.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.2}Comprehensive Hyperparameter Reference}{14}{subsection.B.2}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {7}{\ignorespaces Comprehensive operational hyperparameters for training, continuation, and evaluation.}}{14}{table.caption.37}\protected@file@percent }
+\newlabel{tab:hyperparameters}{{7}{14}{Comprehensive operational hyperparameters for training, continuation, and evaluation}{table.caption.37}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {B.3}Controlled Intervention Grids}{14}{subsection.B.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {C}Offline Preference Optimization: Training Dynamics and Supplemental Diagnostics}{15}{appendix.C}\protected@file@percent }
+\newlabel{app:dpo_supplemental}{{C}{15}{Offline Preference Optimization: Training Dynamics and Supplemental Diagnostics}{appendix.C}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.1}Dataset Length Statistics}{15}{subsection.C.1}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {8}{\ignorespaces Token length distributions and preference directionality across DPO training and evaluation datasets.}}{15}{table.caption.38}\protected@file@percent }
+\newlabel{tab:dpo_dataset_lengths}{{8}{15}{Token length distributions and preference directionality across DPO training and evaluation datasets}{table.caption.38}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.2}Training Loss Dynamics}{15}{subsection.C.2}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces DPO Training Loss Dynamics Across Full Runs and Regularization Forks. Exponential moving average smoothing ($\alpha = 0.05$) illustrates optimization progress across training steps. Higher regularization $\beta $ scales loss values inside the sigmoid, with $\beta = 0.30$ exhibiting lower loss values than $\beta = 0.03$.}}{15}{figure.caption.39}\protected@file@percent }
+\newlabel{fig:dpo_loss_trajectories}{{1}{15}{DPO Training Loss Dynamics Across Full Runs and Regularization Forks. Exponential moving average smoothing ($\alpha = 0.05$) illustrates optimization progress across training steps. Higher regularization $\beta $ scales loss values inside the sigmoid, with $\beta = 0.30$ exhibiting lower loss values than $\beta = 0.03$}{figure.caption.39}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.3}Word-Limit Prompt Compliance Breakdown}{15}{subsection.C.3}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {9}{\ignorespaces Prompt-by-prompt instruction compliance on 10 word-limit prompts across standard and length-balanced DPO.}}{16}{table.caption.40}\protected@file@percent }
+\newlabel{tab:dpo_word_limits_audit}{{9}{16}{Prompt-by-prompt instruction compliance on 10 word-limit prompts across standard and length-balanced DPO}{table.caption.40}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.4}Qualitative Sample Rewards Across First Ten Prompts}{16}{subsection.C.4}\protected@file@percent }
+\@writefile{lot}{\contentsline {table}{\numberline {10}{\ignorespaces Scalar reward scores across the first 10 evaluation prompts for standard DPO and regularization forks.}}{16}{table.caption.41}\protected@file@percent }
+\newlabel{tab:dpo_qualitative_rewards}{{10}{16}{Scalar reward scores across the first 10 evaluation prompts for standard DPO and regularization forks}{table.caption.41}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {C.5}Extended Held-Out Preference Accuracy Across Length Strata and Regularization}{16}{subsection.C.5}\protected@file@percent }
+\newlabel{app:dpo_extended_strata}{{C.5}{16}{Extended Held-Out Preference Accuracy Across Length Strata and Regularization}{subsection.C.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {11}{\ignorespaces Held-out evaluation metrics across DPO regularization strength $\beta \in \{0.03, 0.10, 0.30\}$.}}{16}{table.caption.42}\protected@file@percent }
+\newlabel{tab:dpo_beta}{{11}{16}{Held-out evaluation metrics across DPO regularization strength $\beta \in \{0.03, 0.10, 0.30\}$}{table.caption.42}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {D}Online Policy Optimization (PPO): Continuation Dynamics, Telemetry, and Ablations}{17}{appendix.D}\protected@file@percent }
+\newlabel{app:ppo_supplemental}{{D}{17}{Online Policy Optimization (PPO): Continuation Dynamics, Telemetry, and Ablations}{appendix.D}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Standard PPO continuation dynamics over 20 update steps on \texttt  {rl\_prompt\_pool\_train}. Panels track (a) policy reward, (b) reference policy token KL divergence ($\times 10^{-4}$ nats), (c) policy surrogate loss ($\times 10^{-3}$), (d) value critic MSE loss, (e) token entropy, (f) policy gradient norm, (g) response length (against the 512 token cap), and (h) cached rollout clipping fraction across thresholds $\epsilon \in \{0.05, 0.20, 0.50\}$. Operational profile: peak VRAM 7.30 GiB, total wall-clock time 365 s ($\approx 18$ s per update).}}{17}{figure.caption.43}\protected@file@percent }
+\newlabel{fig:ppo_trajectories}{{2}{17}{Standard PPO continuation dynamics over 20 update steps on \texttt {rl\_prompt\_pool\_train}. Panels track (a) policy reward, (b) reference policy token KL divergence ($\times 10^{-4}$ nats), (c) policy surrogate loss ($\times 10^{-3}$), (d) value critic MSE loss, (e) token entropy, (f) policy gradient norm, (g) response length (against the 512 token cap), and (h) cached rollout clipping fraction across thresholds $\epsilon \in \{0.05, 0.20, 0.50\}$. Operational profile: peak VRAM 7.30 GiB, total wall-clock time 365 s ($\approx 18$ s per update)}{figure.caption.43}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {12}{\ignorespaces Complete step-by-step optimization telemetry for the standard PPO continuation run (20 updates).}}{17}{table.caption.44}\protected@file@percent }
+\newlabel{tab:ppo_standard_history}{{12}{17}{Complete step-by-step optimization telemetry for the standard PPO continuation run (20 updates)}{table.caption.44}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Trajectory comparisons across the four distinct PPO continuation forks over 8 update steps: $\epsilon = 0.05$, shared default ($\epsilon = 0.20, \epsilon = 0.50, \beta _{\text  {KL}} = 0.10$), $\beta _{\text  {KL}} = 0.0$, and $\beta _{\text  {KL}} = 0.20$. Rollouts diverge after update 1, showing that reference KL penalties constrain reference drift while tight clipping ($\epsilon = 0.05$) induces higher update loss volatility.}}{18}{figure.caption.45}\protected@file@percent }
+\newlabel{fig:ppo_fork_trajectories}{{3}{18}{Trajectory comparisons across the four distinct PPO continuation forks over 8 update steps: $\epsilon = 0.05$, shared default ($\epsilon = 0.20, \epsilon = 0.50, \beta _{\text {KL}} = 0.10$), $\beta _{\text {KL}} = 0.0$, and $\beta _{\text {KL}} = 0.20$. Rollouts diverge after update 1, showing that reference KL penalties constrain reference drift while tight clipping ($\epsilon = 0.05$) induces higher update loss volatility}{figure.caption.45}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Cached rollout batch clipping analysis across thresholds $\epsilon \in \{0.05, 0.20, 0.50\}$ ($N=32$). Panel (a) illustrates the percentage of response tokens bounded by clipping under off-policy policy drift. Panel (b) shows the monotonic reduction in surrogate objective value as clipping threshold expands.}}{18}{figure.caption.46}\protected@file@percent }
+\newlabel{fig:ppo_cached_ratio_hist}{{4}{18}{Cached rollout batch clipping analysis across thresholds $\epsilon \in \{0.05, 0.20, 0.50\}$ ($N=32$). Panel (a) illustrates the percentage of response tokens bounded by clipping under off-policy policy drift. Panel (b) shows the monotonic reduction in surrogate objective value as clipping threshold expands}{figure.caption.46}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {13}{\ignorespaces Scalar reward scores across the first 10 held-out evaluation prompts for standard PPO and continuation forks.}}{18}{table.caption.47}\protected@file@percent }
+\newlabel{tab:ppo_qualitative_rewards}{{13}{18}{Scalar reward scores across the first 10 held-out evaluation prompts for standard PPO and continuation forks}{table.caption.47}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {E}Critic-Free Policy Optimization (GRPO): Group-Size Scaling, Normalization, and Telemetry}{19}{appendix.E}\protected@file@percent }
+\newlabel{app:grpo_supplemental}{{E}{19}{Critic-Free Policy Optimization (GRPO): Group-Size Scaling, Normalization, and Telemetry}{appendix.E}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces GRPO group informativeness scaling across candidate group sizes $K \in \{2, 4, 8\}$ under an equal generation budget of 192 completions. Groups are stratified by initial prompt difficulty into Easy and Hard tiers ($\tau = 2.1987$). While scaling from $K=2$ to $K=4$ increases informative group coverage from 93.8\% to 95.8\% and attains 100\% informativeness on easy prompts, hard prompts plateau at 91.7\% for both $K=4$ and $K=8$. This shows that increasing group size plateaus on hard prompts where completions receive identical rewards.}}{19}{figure.caption.48}\protected@file@percent }
+\newlabel{fig:grpo_informativeness}{{5}{19}{GRPO group informativeness scaling across candidate group sizes $K \in \{2, 4, 8\}$ under an equal generation budget of 192 completions. Groups are stratified by initial prompt difficulty into Easy and Hard tiers ($\tau = 2.1987$). While scaling from $K=2$ to $K=4$ increases informative group coverage from 93.8\% to 95.8\% and attains 100\% informativeness on easy prompts, hard prompts plateau at 91.7\% for both $K=4$ and $K=8$. This shows that increasing group size plateaus on hard prompts where completions receive identical rewards}{figure.caption.48}{}}
+\@writefile{lof}{\contentsline {figure}{\numberline {6}{\ignorespaces Standard GRPO continuation dynamics over 20 update steps on \texttt  {rl\_prompt\_pool\_train}. Panels track (a) policy reward, (b) reference policy token KL divergence ($\times 10^{-5}$ nats), (c) within-group reward standard deviation ($\bar  {s}_r$), (d) policy loss, (e) policy gradient norm, (f) token entropy, (g) mean response length against the 512 token cap, and (h) candidate group size ($K$) scaling informativeness. Vertical shaded bands mark no-op updates 5, 13, 15, and 17 where all four completions reached the 512-token cap and produced zero gradients. Operational profile: peak VRAM 8.59 GiB, total wall-clock time 451.3 s ($\approx 22.6$ s per update).}}{19}{figure.caption.49}\protected@file@percent }
+\newlabel{fig:grpo_trajectories}{{6}{19}{Standard GRPO continuation dynamics over 20 update steps on \texttt {rl\_prompt\_pool\_train}. Panels track (a) policy reward, (b) reference policy token KL divergence ($\times 10^{-5}$ nats), (c) within-group reward standard deviation ($\bar {s}_r$), (d) policy loss, (e) policy gradient norm, (f) token entropy, (g) mean response length against the 512 token cap, and (h) candidate group size ($K$) scaling informativeness. Vertical shaded bands mark no-op updates 5, 13, 15, and 17 where all four completions reached the 512-token cap and produced zero gradients. Operational profile: peak VRAM 8.59 GiB, total wall-clock time 451.3 s ($\approx 22.6$ s per update)}{figure.caption.49}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {14}{\ignorespaces Complete step-by-step optimization telemetry for the standard GRPO continuation run (20 updates). Updates 5, 13, 15, and 17 hit the 512-token cap on all completions and were masked out, producing exactly zero gradient norm, policy loss, KL divergence, and entropy despite non-zero reward variance.}}{20}{table.caption.50}\protected@file@percent }
+\newlabel{tab:grpo_standard_history}{{14}{20}{Complete step-by-step optimization telemetry for the standard GRPO continuation run (20 updates). Updates 5, 13, 15, and 17 hit the 512-token cap on all completions and were masked out, producing exactly zero gradient norm, policy loss, KL divergence, and entropy despite non-zero reward variance}{table.caption.50}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {15}{\ignorespaces GRPO group-size scaling and sequence normalization comparison.}}{20}{table.caption.51}\protected@file@percent }
+\newlabel{tab:grpo_results}{{15}{20}{GRPO group-size scaling and sequence normalization comparison}{table.caption.51}{}}
+\@writefile{toc}{\contentsline {section}{\numberline {F}Prompt Templates, Scoring Rubrics, and Evaluation Protocols}{21}{appendix.F}\protected@file@percent }
+\newlabel{app:prompts}{{F}{21}{Prompt Templates, Scoring Rubrics, and Evaluation Protocols}{appendix.F}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {F.1}Policy Chat Template}{21}{subsection.F.1}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {F.2}Safety Calibration Judge Prompt and Schema}{21}{subsection.F.2}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {F.3}Pairwise AI Judge Scoring Rubric}{22}{subsection.F.3}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {F.4}Deterministic Exact-Answer Verifier Specification}{22}{subsection.F.4}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {F.5}Safety Calibration Multi-Policy Evaluation}{23}{subsection.F.5}\protected@file@percent }
+\newlabel{app:safety_results}{{F.5}{23}{Safety Calibration Multi-Policy Evaluation}{subsection.F.5}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {16}{\ignorespaces Multi-policy manual audit confusion matrix ($4 \times 4$) on 240 audited responses (60 prompts $\times $ 4 policies).}}{23}{table.caption.52}\protected@file@percent }
+\newlabel{tab:safety_confusion}{{16}{23}{Multi-policy manual audit confusion matrix ($4 \times 4$) on 240 audited responses (60 prompts $\times $ 4 policies)}{table.caption.52}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {17}{\ignorespaces Refusal rates (\% labeled \texttt  {JUSTIFIED\_REFUSAL}) across all 18 XSTest prompt categories ($N = 25$ prompts per category; 250 safe prompts across 10 categories, 200 unsafe contrast prompts across 8 categories).}}{23}{table.caption.53}\protected@file@percent }
+\newlabel{tab:safety_full_categories}{{17}{23}{Refusal rates (\% labeled \texttt {JUSTIFIED\_REFUSAL}) across all 18 XSTest prompt categories ($N = 25$ prompts per category; 250 safe prompts across 10 categories, 200 unsafe contrast prompts across 8 categories)}{table.caption.53}{}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {F.6}Feedback Mechanisms: Perturbation Sensitivity and Transfer}{24}{subsection.F.6}\protected@file@percent }
+\newlabel{app:feedback_results}{{F.6}{24}{Feedback Mechanisms: Perturbation Sensitivity and Transfer}{subsection.F.6}{}}
+\@writefile{toc}{\contentsline {paragraph}{Evaluator Cache Sizes and Agreement Breakdown}{24}{section*.54}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {7}{\ignorespaces Controlled Diagnostic Perturbation Response Distributions. Diagnostic response distributions across 20 GSM8K test problems (80 evaluated pairs) under four controlled perturbation conditions (Reasoning Corruption, Outcome Error, Persuasive Filler, Gold Distractor), comparing rule-based Exact Verifier evaluations against Pairwise AI Judge decisions. The deterministic verifier is sensitive to final outcome errors ($S_{\text  {outcome}} = 1.0$) and distractors, but blind to reasoning invalidity ($S_{\text  {reason}} = 0.0$), whereas the AI judge ties on outcome-corrupted completions and prefers verbose filler in 25.0\% of pairs.}}{24}{figure.caption.55}\protected@file@percent }
+\newlabel{fig:task5_perturbations}{{7}{24}{Controlled Diagnostic Perturbation Response Distributions. Diagnostic response distributions across 20 GSM8K test problems (80 evaluated pairs) under four controlled perturbation conditions (Reasoning Corruption, Outcome Error, Persuasive Filler, Gold Distractor), comparing rule-based Exact Verifier evaluations against Pairwise AI Judge decisions. The deterministic verifier is sensitive to final outcome errors ($S_{\text {outcome}} = 1.0$) and distractors, but blind to reasoning invalidity ($S_{\text {reason}} = 0.0$), whereas the AI judge ties on outcome-corrupted completions and prefers verbose filler in 25.0\% of pairs}{figure.caption.55}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {18}{\ignorespaces Controlled diagnostic perturbation scores across feedback mechanisms (20 problems, 100 responses).}}{24}{table.caption.56}\protected@file@percent }
+\newlabel{tab:feedback_perturbations}{{18}{24}{Controlled diagnostic perturbation scores across feedback mechanisms (20 problems, 100 responses)}{table.caption.56}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {19}{\ignorespaces Classification of strict-accuracy flips relative to SFT Base on GSM8K ($N = 20$ total flips across RLVR and RLAIF). Format Difference indicates whether the two completions differed in \texttt  {\#\#\#\#} delimiter inclusion. Lenient Concordance indicates whether the two completions agreed under lenient evaluation (extracting the last numerical value in text).}}{24}{table.caption.57}\protected@file@percent }
+\newlabel{tab:strict_pairs_classification}{{19}{24}{Classification of strict-accuracy flips relative to SFT Base on GSM8K ($N = 20$ total flips across RLVR and RLAIF). Format Difference indicates whether the two completions differed in \texttt {\#\#\#\#} delimiter inclusion. Lenient Concordance indicates whether the two completions agreed under lenient evaluation (extracting the last numerical value in text)}{table.caption.57}{}}
+\@writefile{lot}{\contentsline {table}{\numberline {20}{\ignorespaces Operational comparison across reward and feedback sources. Diagnostic coverage measures non-tie rates across 80 perturbation pairs. Compute records inference overhead across evaluations.}}{25}{table.caption.58}\protected@file@percent }
+\newlabel{tab:reward_source_synthesis}{{20}{25}{Operational comparison across reward and feedback sources. Diagnostic coverage measures non-tie rates across 80 perturbation pairs. Compute records inference overhead across evaluations}{table.caption.58}{}}
+\gdef \@abspage@last{25}

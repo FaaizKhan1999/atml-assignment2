@@ -16,8 +16,12 @@
 \usepackage{subcaption}
 \usepackage{natbib}
 \usepackage{amsmath, amssymb}
+\usepackage{algorithm}
+\usepackage{algpseudocode}
+\usepackage{longtable}
+\usepackage{array}
 
-\title{Venturing into the (W)OODs: An Exploration Beyond IID Scenarios}
+\title{"I Can't Assist with Writing Your LLM Post-Training Research for You", and 239 Other Excuses to Do Zero Work}
 
 \author{
   Faaiz Khan \\
@@ -32,29 +36,934 @@
 \maketitle
 
 \begin{abstract}
-  Post-training adapts pretrained language models to human preferences and task constraints, but training objectives and feedback sources directly influence response length, refusal calibration, and optimization stability. We evaluate three preference optimization methods (DPO, PPO, GRPO) and two feedback modalities (exact outcome verification and AI judgment) on \texttt{Qwen2.5-1.5B-Instruct} with LoRA adapters. Specifically: (i) training DPO on length-balanced preference pairs yields higher accuracy on rejected-longer completions (73.4\% vs. 63.3\%, an 8-pair difference on $N = 79$ evaluated pairs); (ii) in a cached rollout batch, PPO clipping at $\epsilon = 0.05$ bounds 16.0\% of token updates (compared to 5.5\% at $\epsilon = 0.20$), while removing reference KL penalties ($\beta_{\text{KL}} = 0.0$) produces negligible policy drift over short continuation budgets (token KL $< 10^{-4}$ nats); (iii) in GRPO, within-group reward variance provides informative updates on 95.8\% of prompt groups for group sizes $K \ge 4$; (iv) on XSTest, the automated judge reported zero safe over-refusals across all four policies, but a 240-item audit across the four policies (60 prompts $\times$ 4) showed a 72.1\% agreement rate, with the judge labeling 40 auditor-identified over-refusals as justified refusals (10 per policy); and (v) on controlled math perturbations, deterministic verifiers detected all outcome errors ($S_{\text{outcome}} = 1.0$) but were invariant to reasoning corruption, whereas the pairwise AI judge tied on all 20 outcome-error pairs and preferred responses containing persuasive filler over clean solutions in 5 of 20 pairs (25.0\% under position-randomized scoring). These results show that bounded post-training gains remain sensitive to length and regularization constraints, while the 3B automated judge used here exhibits blind spots around benign refusal and subtle outcome discrepancies. Code and evaluation scripts: \url{https://github.com/FaaizKhan1999/atml-assignment2}.
+  Post-training adapts pretrained language models to preferences and task constraints, but training objectives and feedback sources directly influence response length, refusal calibration, and optimization stability. We evaluate three preference optimization methods (DPO, PPO, GRPO) and two feedback sources (exact outcome verification and AI judgment) on \texttt{Qwen2.5-1.5B-Instruct} with LoRA adapters. Specifically: (i) training DPO on length-balanced pairs widens the accuracy gap between rejected-longer and preferred-longer completions from 17.1\% to 31.1\% ($N = 237$), favoring shorter responses; (ii) on cached rollouts, tight PPO clipping ($\epsilon = 0.05$) bounds 16.0\% of tokens, but shows higher loss and gradient variance during continuation; (iii) GRPO informativeness reaches 100\% on easy prompts but plateaus at 91.7\% on hard prompts (11 of 12 groups informative); (iv) on XSTest, the 3B automated judge reported zero safe over-refusals across all four policies, whereas a 240-item audit across 60 prompts (72.1\% agreement, 173/240) revealed that all four policies refused the same 10 benign prompts, behavior inherited directly from SFT; and (v) on controlled math perturbations, deterministic verifiers detected all outcome errors ($S_{\text{outcome}} = 1.0$) but were invariant to reasoning corruption, whereas the pairwise AI judge tied on all 20 outcome errors and favored persuasive filler in 25.0\% of pairs. These findings show that length balancing shifts accuracy across length strata rather than eliminating length sensitivity, while our automated judge masked policy over-refusal and proved vulnerable to persuasive framing. Code: \url{https://github.com/FaaizKhan1999/atml-assignment2}.
 \end{abstract}
 
 \section{Introduction}
 
+Modern language model development commonly follows a three-stage pipeline: pretraining learns general text representations, supervised fine-tuning (SFT) teaches models to follow instructions, and post-training aligns outputs with preferences or reward signals \citep{ouyang2022instructgpt}. Common post-training methods include Direct Preference Optimization \citep[DPO;][]{rafailov2023dpo}, Proximal Policy Optimization \citep[PPO;][]{schulman2017ppo, ouyang2022instructgpt}, and Group Relative Policy Optimization \citep[GRPO;][]{shao2024deepseekmath}. Unlike pretraining and SFT, which train models to predict or imitate text distributions, post-training optimizes a scalar or pairwise objective directly. This shift from imitation to reward maximization makes the policy vulnerable to optimizing proxies rather than desired behaviors, making it essential to analyze the failure modes of this stage.
+
+However, optimizing an objective does not ensure that the policy meets the intended goal. Standard evaluation metrics like reward scores, benchmark accuracy, and reference KL divergence each measure only a single property in isolation. For example, a model can gain preference accuracy by exploiting response length differences in training data rather than producing better answers. Automated evaluators like LLM judges can also mischaracterize model behavior. In safety evaluation, an automated judge can fail to detect over-refusal by classifying unwarranted refusals of harmless prompts as justified. In reasoning tasks, automated judges can favor persuasive formatting over concise solutions, or frequently return ties even when candidate solutions contain overt outcome errors. Standard evaluations often report aggregate scores without isolating how training data balance affects preference learning, how online constraints bound updates across difficulty levels, or how judges handle edge cases \citep{anthropic2023evaluating}.
+
+To study how optimization constraints and feedback sources affect policy behavior, we conduct a controlled empirical comparison on \texttt{Qwen2.5-1.5B-Instruct} \citep{qwen2025qwen25} across offline preference optimization (DPO), online reinforcement learning (PPO and GRPO), and distinct feedback sources (RLVR and RLAIF). Both the safety judge and the pairwise reasoning judge use \texttt{Qwen2.5-3B-Instruct}, which shares its model family with the evaluated policies.
+
+We organize our study around four central questions and empirical findings:
+\begin{enumerate}
+  \item To what extent do offline gains reflect length bias? Training on length-balanced preference pairs widens the accuracy gap between rejected-longer and preferred-longer completions, favoring shorter responses while training on substantially shorter sequences.
+  \item How do update rules bound policy drift? In PPO, ratio clipping binds a notable fraction of token updates on cached rollouts with higher variance during continuation, while in GRPO, group informativeness plateaus on hard prompts due to within-group reward collapse.
+  \item Can automated judges detect over-refusal? On XSTest, the automated judge reported zero safe over-refusals across all four policies, whereas manual auditing showed that all four policies refused the same benign prompts inherited directly from the supervised baseline.
+  \item How do verifiers and AI judges diverge on corrupted inputs? By construction, exact binary verifiers detect all outcome errors but miss reasoning invalidity, whereas the pairwise AI judge tied on all outcome-corrupted completions and showed vulnerability to persuasive rhetorical padding.
+\end{enumerate}
+
 \section{Experimental Setup and Methods}
+\label{sec:setup}
+
+\subsection{Study Design and Shared Setup}
+\label{sec:setup_preface}
+
+Within each controlled comparison, we vary one factor by design, holding prompt pools, decoding configurations, and random seeds fixed. We note three necessary exceptions: length-balanced DPO alters both dataset composition and length balance; standard DPO (1 epoch of 723 steps at batch size 2, totaling 1,446 pairs) and the $\beta$ sweeps (short forks on 600 pairs) differ in training budget; and the supplied RLVR and RLAIF adapters differ in feedback source.
+
+\paragraph{Shared Model Setup} Across all experiments, our base policy is \texttt{Qwen2.5-1.5B-Instruct} \citep{qwen2025qwen25}. Trainable parameters are adapted using LoRA \citep{hu2022lora} with rank $r = 8$ and scaling factor $\alpha = 16$. The base policy and frozen reference policy share identical FP16 weights, with the reference disabling the adapter to avoid quantization mismatch. The frozen scalar reward model for preference optimization is \texttt{yavuz-ai/qwen2.5-1.5b-rm-ultrafeedback} trained on UltraFeedback \citep{cui2024ultrafeedback}. In PPO, the learned value critic is initialized from \texttt{Qwen2.5-0.5B-Instruct} with matching LoRA adapters. Both safety calibration and pairwise preference evaluation use \texttt{Qwen2.5-3B-Instruct}. We note that the 1.5B policies and the 3B judge share the same Qwen2.5 model family.
+
+\paragraph{Trained versus Supplied Components} Standard DPO is trained from the base instruct policy initialization using LoRA adapters. PPO and GRPO are continued from supplied midpoint checkpoints \citep{atmlpa2starter, atmlpa2assets}. For feedback source comparisons, RLVR and RLAIF adapters are supplied checkpoints trained with matched group-based optimizers and completion budgets.
+
+\paragraph{Datasets and Sample Sizes} All runs use fixed seed 6304. For PPO and GRPO continuations, 20 updates consume 20 prompts (1 prompt per update) from the 200-prompt pool, while 8-update forks consume 8 prompts. The cached GRPO group-size study evaluates 192 completions collected across 24 prompts ($24 \times 8$). Appendix Table~\ref{tab:task_overview} summarizes the setup, budgets, factors varied, and evaluation benchmarks.
+
+\subsection{Optimization Algorithms}
+\label{sec:setup_algorithms}
+
+We investigate three preference optimization objectives:
+
+\paragraph{Direct Preference Optimization (DPO)} DPO optimizes an implicit reward without an explicit critic or on-policy sampling \citep{rafailov2023dpo, gunton2024understanding}:
+\[
+\mathcal{L}_{\text{DPO}}(\theta) = -\mathbb{E}_{(x, y^+, y^-)} \left[ \log \sigma \left( \beta \log \frac{\pi_\theta(y^+ \mid x)}{\pi_{\text{ref}}(y^+ \mid x)} - \beta \log \frac{\pi_\theta(y^- \mid x)}{\pi_{\text{ref}}(y^- \mid x)} \right) \right].
+\]
+Sequence log-probabilities are summed over response tokens only, conditioned on the prompt under teacher forcing. Preference accuracy is the fraction of held-out pairs with a positive implicit margin $m_\theta(x, y^+, y^-) > 0$.
+
+\paragraph{Proximal Policy Optimization (PPO)} PPO optimizes the policy online using rollouts scored by the reward model and a learned critic $V_\phi$ \citep{schulman2017ppo, ouyang2022instructgpt, wolfe2023ppo, huang2023ndetails, vonwerra2020trl}. Updates are constrained by the clipped surrogate objective $\mathcal{L}_{\text{clip}}(\theta) = -\mathbb{E}_t [ \min(\rho_t(\theta) \tilde{A}_t, \, \text{clip}(\rho_t(\theta), 1-\epsilon, 1+\epsilon) \tilde{A}_t) ]$, where $\rho_t(\theta)$ is the token probability ratio and $\tilde{A}_t$ is the standardized Generalized Advantage Estimation (GAE) advantage. Terminal rewards are shaped with token reference KL penalties: $r_t = \mathbb{I}[t = T] R_\psi(x, y) - \beta_{\text{KL}}(\log \pi_{\text{old}}(y_t) - \log \pi_{\text{ref}}(y_t))$. The \textit{PPO clip fraction} is the percentage of valid response tokens where $\rho_t(\theta)$ falls outside $[1-\epsilon, 1+\epsilon]$.
+
+\paragraph{Group Relative Policy Optimization (GRPO)} GRPO replaces the learned critic by sampling a group of $K$ completions $\{y^{(1)}, \dots, y^{(K)}\}$ per prompt \citep{shao2024deepseekmath}, normalizing scalar rewards $r^{(k)}$ into group-relative advantages $\hat{A}^{(k)} = (r^{(k)} - \mu_r) / (\sigma_r + \epsilon_{\text{adv}})$. The policy is updated via:
+\[
+\mathcal{L}_{\text{GRPO}}(\theta) = -\frac{1}{K}\sum_{k=1}^K \frac{1}{T_k}\sum_{t=1}^{T_k} \left[ \min\left( \rho_t^{(k)}(\theta)\hat{A}^{(k)}, \text{clip}(\rho_t^{(k)}(\theta), 1-\epsilon, 1+\epsilon)\hat{A}^{(k)} \right) - \beta_{\text{KL}} D_{\text{KL}, t}^{(k)} \right],
+\]
+where $T_k = |y^{(k)}|$ is the realized response length, and $D_{\text{KL}, t}^{(k)} = \frac{\pi_{\text{ref}}(y_t^{(k)})}{\pi_\theta(y_t^{(k)})} - \log \frac{\pi_{\text{ref}}(y_t^{(k)})}{\pi_\theta(y_t^{(k)})} - 1$ is the non-negative per-token KL divergence estimator \citep{shao2024deepseekmath}, averaged per token over each completion sequence. A prompt group is \textit{informative} if sampled rewards have standard deviation $\sigma_r > 10^{-6}$, and \textit{uninformative} when $\sigma_r \le 10^{-6}$. Our Dr.~GRPO-style condition \citep{liu2025understanding} replaces $1/T_k$ with a fixed budget normalization $1/L_{\max}$ ($L_{\max}=512$) while retaining within-group standard-deviation advantage normalization.
+
+\paragraph{Diagnostic Metrics and Difficulty Bins} We evaluate reference drift using the sampled-token reference KL estimator $\frac{1}{|y|}\sum_{t=1}^{|y|} (\log \pi_\theta(y_t) - \log \pi_{\text{ref}}(y_t))$, averaged per valid response token across rollouts. Sequence negative log-likelihood $-\frac{1}{|y|}\sum_{t=1}^{|y|} \log \pi_\theta(y_t)$ is computed per token over unmasked response positions. Response length counts generated tokens excluding prompt and padding, reported with mean and standard deviation or interquartile range (IQR), alongside whitespace word counts for length-constrained prompts. Word-limit compliance is the fraction of responses respecting explicit length caps ($\le 25$--$45$ words). For GRPO group analysis, we define the \textit{prompt difficulty binning rule} once: prompts are split based on the median average reward of completions across the rollout cache ($\tau = 2.1987$), designating prompts with mean reward $\le \tau$ as Hard and $> \tau$ as Easy.
+
+\subsection{Safety Evaluation and Feedback Sources}
+\label{sec:setup_safety_feedback}
+
+\paragraph{Safety Calibration Protocol} We evaluate four fixed policies (SFT Base, Standard DPO, Standard PPO, Standard GRPO) on XSTest \citep{rottger2024xstest, bianchi2024safetytuned, bai2022constitutional} using deterministic greedy decoding ($T = 0.0$). The 3B automated judge assigns one of five mutually exclusive labels: \texttt{SAFE\_ANSWER}, \texttt{JUSTIFIED\_REFUSAL}, \texttt{UNSAFE\_COMPLIANCE}, \texttt{OVER\_REFUSAL}, or \texttt{AMBIGUOUS}. A single human annotator audited 60 prompts across all four policies ($N = 240$ responses) blind to judge predictions, labeling identical completions consistently across policies. We report safe-answer, safe over-refusal, unsafe compliance, justified refusal, and ambiguous rates.
+
+\paragraph{Feedback Sources: Exact Verification versus AI Preferences} We evaluate supplied LoRA adapters trained with exact verification versus AI feedback on GSM8K \citep{cobbe2021gsm8k, deepseekai2025r1, lee2024rlaif}:
+\begin{itemize}
+  \item The verifier extracts the last designated answer matching \texttt{\#\#\#\# <number>}, strips commas, and assigns binary reward $r_{\text{RLVR}}(x, y) = \mathbb{I}[\text{verifier}(y) = \text{gold}(x)]$ within numerical tolerance $10^{-9}$.
+  \item The 3B AI judge evaluates pairwise comparisons across $K$ completions to compute normalized win rates $r_{\text{RLAIF}}(y_k) = (\text{wins}(y_k) + 0.5 \cdot \text{ties}(y_k)) / (K - 1)$.
+\end{itemize}
+Because the RLAIF adapter was trained by a judge from the same \texttt{Qwen2.5-3B-Instruct} family used for evaluation, we acknowledge that scoring this adapter introduces circularity with judge preferences. Furthermore, binary RLVR rewards and continuous RLAIF win rates represent fundamentally different scales and cannot be compared as utilities.
+
+For pairwise comparisons, we count a win as 1, a tie as 0.5, and a loss as 0. Candidate presentation order is balanced deterministically using a hash of inputs. We report exact accuracy, format compliance, win rate against SFT, verifier--judge agreement, and SFT baseline out-of-domain transfer on SVAMP \citep{patel2021svamp} ($N = 100$). On the 100-response diagnostic set, we evaluate outcome sensitivity, reasoning sensitivity, tie rates, and wrong-preference rates:
+\[
+S_{\text{outcome}} = \Pr\left[R(y_{\text{correct final}}) > R(y_{\text{wrong final}})\right], \quad S_{\text{reason}} = \Pr\left[R(y_{\text{clean}}) > R(y_{\text{reason-corrupt}})\right].
+\]
 
 \section{Results and Analysis}
+\label{sec:results}
 
-\section{Cross-Task Analysis}
+\subsection{Direct Preference Optimization and Length Confounding}
+\label{sec:results_dpo}
+
+\paragraph{Regularization Sensitivity}
+Appendix Table~\ref{tab:dpo_beta} shows that varying regularization strength across short continuation forks produces negligible shifts in held-out accuracy and implicit margin, with differences remaining within evaluation sampling noise. While higher regularization reduces held-out loss and raises reward, DPO loss is directly scaled by the coefficient inside the sigmoid, making loss values across different regularization runs incomparable. Token reference divergence differences across forks also remain within sampling error, whereas the higher divergence of the standard policy reflects its extended optimization horizon rather than algorithmic instability. Because all runs share a single random seed without replication, these minor shifts reflect sampling variance rather than distinct regularization optima.
+
+\paragraph{Length Confounding and Implicit Margins}
+Standard preference data inherently favors longer responses (Appendix Table~\ref{tab:dpo_dataset_lengths}). As shown in Table~\ref{tab:dpo_strata_summary}, standard DPO accuracy is substantially higher when the rejected response is longer than when the preferred response is longer, indicating that the implicit margin favors shorter completions. Training on length-balanced data widens this rejected-versus-preferred accuracy gap from 17.1\% to 31.1\%, favoring shorter responses. The balanced training set also contains substantially shorter sequences on average (Appendix Table~\ref{tab:dpo_dataset_lengths}), aligning closer to the stratified evaluation length scale. On instruction following, balanced training slightly reduces word-limit compliance. Because each stratum contains a limited sample of pairs, these shifts reflect distributional redistribution across length regimes rather than uniform debiasing.
+
+\begin{table}[t]
+\centering
+\caption{Held-out evaluation across length strata ($N = 237$) and word-limit compliance for standard and length-balanced DPO policies. Evaluated on $N = 237$ valid pairs from \texttt{dpo\_length\_stratified\_eval} (filtered from 82 pairs per stratum due to prompts exceeding sequence length limits: 78 preferred-longer, 80 length-matched, 79 rejected-longer). Accuracy reports correct implicit margins ($m_\theta > 0$), and the overall row reconciles to the exact sum of the evaluated strata.}
+\label{tab:dpo_strata_summary}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Evaluation Stratum / Metric} & \textbf{Pairs ($N$)} & \multicolumn{2}{c}{\textbf{Standard DPO}} & \multicolumn{2}{c}{\textbf{Length-Balanced DPO}} \\
+\cmidrule(lr){3-4} \cmidrule(lr){5-6}
+& & \textbf{Accuracy (\%)} & \textbf{Mean Margin} & \textbf{Accuracy (\%)} & \textbf{Mean Margin} \\
+\midrule
+Preferred Longer ($|y^+| > |y^-|$) & 78 & 46.2\% (36/78) & -0.0764 & 42.3\% (33/78) & -0.4972 \\
+Matched Length ($|y^+| \approx |y^-|$) & 80 & 57.5\% (46/80) & +0.1975 & 57.5\% (46/80) & +0.3362 \\
+Rejected Longer ($|y^-| > |y^+|$) & 79 & 63.3\% (50/79) & +0.7173 & 73.4\% (58/79) & +1.4932 \\
+\midrule
+Overall Stratified Accuracy & 237 & 55.7\% (132/237) & +0.2812 & 57.8\% (137/237) & +0.4416 \\
+Rejected vs. Preferred Accuracy Gap & -- & \multicolumn{2}{c}{+17.1\% points} & \multicolumn{2}{c}{+31.1\% points} \\
+\midrule
+Word-Limit Compliance ($N = 10$) & 10 & \multicolumn{2}{c}{60.0\% (6/10 compliant)} & \multicolumn{2}{c}{50.0\% (5/10 compliant)} \\
+Word-Limit Generated Length & 10 & \multicolumn{2}{c}{$38.2$ words ($45.5$ tokens)} & \multicolumn{2}{c}{$39.5$ words ($45.3$ tokens)} \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\paragraph{Reward Model Discrepancies}
+Inspecting held-out evaluation prompts reveals that scalar reward scores can decouple from semantic correctness (Appendix Table~\ref{tab:dpo_qualitative_rewards}). On interpersonal communication prompts, two models produce nearly identical high-quality answers, yet the reward model scores one substantially higher than the other. On multiple-choice prompts, all models select the incorrect response, yet the frozen reward model assigns positive scores that exceed the correct single-token answer for the $\beta = 0.30$ fork. These qualitative discrepancies show that the reward model can exhibit large score variance on equivalent text and assign high scores to incorrect responses.
+
+\subsection{Online Policy Optimization Dynamics and Clipping Bounds}
+\label{sec:results_ppo}
+
+\paragraph{Ratio Clipping Bounds and Stability}
+During on-policy continuation training, policy updates run with probability ratios remaining close to unity. As a result, the training clip fraction remains virtually zero across updates, activating only briefly under tight clipping (Appendix Figure~\ref{fig:ppo_trajectories}h). In contrast, when evaluated on cached rollouts with policy drift, clipping binds substantially across thresholds (Table~\ref{tab:ppo_ablations_summary}). Evaluating update stability across continuation forks reveals that tight clipping exhibits higher loss and gradient variance than the shared default. Trajectories for standard and wider clipping bounds remain bit-identical because on-policy probability ratios never breach standard bounds, confirming that wider clipping bounds are inactive rather than harmful in short continuations.
+
+\begin{table}[t]
+\centering
+\caption{Operational and held-out evaluation across PPO clipping thresholds ($\epsilon$) and reference KL penalties ($\beta_{\text{KL}}$) on \texttt{rl\_prompt\_pool\_eval} ($N = 200$). The midpoint baseline was not precomputed on held-out prompts ($N=200$); on 32 cached rollouts, its reward is $1.104$ with length $275.4$. The default fork row reflects the bit-identical trajectory shared by $\epsilon = 0.20$, $\epsilon = 0.50$, and $\beta_{\text{KL}} = 0.10$. Cached clip fraction measures tokens bounded on cached rollouts.}
+\label{tab:ppo_ablations_summary}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Model / Configuration} & \textbf{Updates} & \textbf{Cached Clip (\%)} & \textbf{Held-out Reward} & \textbf{Token KL ($10^{-5}$)} & \textbf{Entropy} & \textbf{Length (tokens)} \\
+\midrule
+Midpoint Baseline & 0 & n/a & n/a$^\dagger$ & 0.00 & n/a & n/a \\
+Standard PPO ($\epsilon = 0.20, \beta_{\text{KL}} = 0.10$) & 20 & 5.5\% & 1.4826 & -3.57 & 0.7885 & $301.0 \pm 246.9$ \\
+\midrule
+Tight Clipping ($\epsilon = 0.05, \beta_{\text{KL}} = 0.10$) & 8 & 16.0\% & 1.5748 & -4.18 & 0.7903 & $303.3 \pm 249.7$ \\
+Shared Default ($\epsilon \in \{0.20, 0.50\}, \beta_{\text{KL}} = 0.10$) & 8 & 5.5\% / 3.8\% & 1.4799 & +1.62 & 0.8076 & $298.9 \pm 248.3$ \\
+No KL Penalty ($\epsilon = 0.20, \beta_{\text{KL}} = 0.00$) & 8 & n/a & 1.5121 & +6.50 & 0.8007 & $296.1 \pm 250.7$ \\
+High KL Penalty ($\epsilon = 0.20, \beta_{\text{KL}} = 0.20$) & 8 & n/a & 1.4322 & -2.44 & 0.7857 & $299.3 \pm 254.3$ \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\paragraph{KL Divergence Pressure and Mode Concentration}
+Table~\ref{tab:ppo_ablations_summary} and Appendix Figure~\ref{fig:ppo_fork_trajectories} show the effect of reference regularization. Removing the reference penalty yields the highest held-out reward, while strong enforcement constrains reward. Differences in sampled token log-ratios remain within estimator noise near zero. Across continuation, token entropy and rewards show high step-to-step variance without a monotonic trend (Appendix Table~\ref{tab:ppo_standard_history}), reflecting single-prompt online rollouts. Initial updates share identical responses and rewards while logged divergence values reflect early reward shaping.
+
+\subsection{Critic-Free Policy Optimization and Group Informativeness}
+\label{sec:results_grpo}
+
+\paragraph{Group Size Scaling and Informativeness Plateau}
+Appendix Table~\ref{tab:grpo_results} and Appendix Figure~\ref{fig:grpo_informativeness} illustrate the effect of scaling group size under an equal rollout budget. Expanding group size improves informative coverage on easy prompts, achieving complete coverage at moderate group sizes. However, hard prompts plateau with 11 of 12 groups informative, where 2 specific prompts produced completions with identical rewards across all rollouts (e.g. prompt 981), yielding zero reward variance. In contrast, when completions receive distinct reward scores, non-zero advantage spreads provide valid policy direction. Across all tiers, advantage variance strictly matches the informativeness rate because standardized advantages possess unit variance when non-zero, while the upward trend in average group spread reflects finite-sample estimator bias.
+
+\begin{table}[t]
+\centering
+\caption{Operational and held-out evaluation across GRPO sequence length normalization schemes on \texttt{rl\_prompt\_pool\_eval} ($N = 200$). The canonical fork trajectory is bit-identical to the first 8 updates of the standard run. Training lengths are capped at 512 tokens, whereas qualitative evaluation completions use a 768 token limit. Nonzero gradient norm reports the mean over active updates (excluding masked no-op update 5 for canonical, and updates 5, 13, 15, and 17 for standard 20 updates).}
+\label{tab:grpo_normalization_summary}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Normalization Scheme} & \textbf{Updates} & \textbf{Held-out Reward} & \textbf{Token KL ($10^{-5}$)} & \textbf{Entropy} & \textbf{Length (tok)} & \textbf{Active $\|\nabla_\theta \mathcal{L}\|_2$} \\
+\midrule
+Canonical GRPO ($1 / T_k$) & 8 & 1.3381 & +1.96 & 0.7943 & $312.2 \pm 257.0$ & 0.465 \\
+Dr.~GRPO ($1 / L_{\max}$) & 8 & 1.2945 & +5.61 & 0.7892 & $298.7 \pm 254.1$ & 0.083 \\
+\midrule
+Standard GRPO (Canonical) & 20 & 1.2661 & +8.81 & 0.7997 & $296.4 \pm 255.1$ & 0.356 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\paragraph{Sequence Normalization and Step-Size Dampening}
+Table~\ref{tab:grpo_normalization_summary} compares canonical token-length normalization with fixed-budget normalization. Normalizing by the fixed sequence cap reduces the effective step size by scaling each completion gradient by its relative length against the budget. This substantially dampens parameter updates, yielding a sharp drop in mean active gradient norm relative to canonical normalization under identical learning rates. Consequently, performance differences between the two schemes over short horizons conflate token-length allocation with reduced optimization progress. Pearson correlations between response length and evaluation metrics on small qualitative samples carry wide standard errors and represent exploratory indicators rather than definitive behavioral divergence.
+
+\paragraph{Zero-Gradient Masking and Optimization Stability}
+In continuation training, a substantial fraction of updates resulted in complete no-ops where gradient norm, policy loss, reference divergence, and entropy were exactly zero (Appendix Table~\ref{tab:grpo_standard_history} and Figure~\ref{fig:grpo_trajectories}). These no-ops occurred whenever all completions within a group reached the sequence length cap and were masked out. Standard informativeness metrics overlook this failure because rollout reward standard deviations remained non-zero, creating a discrepancy between reported variance and actual parameter updates. Following these masked no-ops, subsequent updates resumed active parameter updates without destabilizing training loss.
+
+\subsection{Safety Alignment and Refusal Calibration on XSTest}
+\label{sec:results_safety}
+
+\begin{table}[t]
+\centering
+\caption{Safety calibration and refusal behavior across policies on XSTest ($N = 450$; 250 safe, 200 unsafe). Safe JR Share measures benign prompts labeled as justified refusals by the judge. The 3B judge never emitted \texttt{OVER\_REFUSAL} or \texttt{AMBIGUOUS} (0.0\%), and never emitted \texttt{UNSAFE\_COMPLIANCE} on unsafe prompts (0.0\%).}
+\label{tab:safety_overview}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Policy} & \textbf{Safe Answer (\%)} & \textbf{Safe JR Share} & \textbf{Unsafe JR (\%)} & \textbf{Unsafe Answered} & \textbf{Length (tok)} & \textbf{Text Identical (\%)} \\
+\midrule
+SFT Base & 58.0\% (145/250) & 40.8\% (102/250) & 88.5\% (177/200) & 11.5\% (23/200) & $108.1 \pm 80.1$ & 100.0\% (450/450) \\
+Offline DPO & 55.2\% (138/250) & 44.0\% (110/250) & 87.0\% (174/200) & 13.0\% (26/200) & $110.3 \pm 82.4$ & 35.8\% (161/450) \\
+Online PPO & 56.4\% (141/250) & 42.4\% (106/250) & 88.0\% (176/200) & 12.0\% (24/200) & $108.0 \pm 80.2$ & 84.7\% (381/450) \\
+Critic-Free GRPO & 57.2\% (143/250) & 41.6\% (104/250) & 88.0\% (176/200) & 12.0\% (24/200) & $107.7 \pm 80.1$ & 84.7\% (381/450) \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\paragraph{Safety Invariance Under Post-Training Optimization}
+Table~\ref{tab:safety_overview} presents the safety evaluation across policies alongside paired comparisons against the SFT baseline. Across all four models, safe-answer rates remain tightly clustered, with differences falling within evaluation sampling error. Both online PPO and critic-free GRPO generate completions that are predominantly verbatim identical to SFT, while offline DPO matches SFT text on over a third of prompts. All four policies receive identical judge labels on the vast majority of prompts, with net shifts in safe responses remaining small (-7 for DPO, -4 for PPO, -2 for GRPO). These results show that safety refusal rates remain largely unchanged primarily because post-trained text is predominantly verbatim identical to SFT.
+
+\paragraph{Lexical Sensitivity and Inherited Refusal Patterns}
+Appendix Table~\ref{tab:safety_full_categories} reveals that refusal behavior is strongly driven by sensitive keywords rather than harmful intent. Safe prompts in sensitive contexts (fictional privacy, historical figures, and real discrimination on nonsense groups) trigger high refusal rates across all policies. In contrast, definitions, nonsense discrimination on real groups, and metaphorical expressions rarely trigger refusals. All three post-trained policies mirror the category-level refusal distribution of the SFT baseline, showing that models inherit lexical sensitivity thresholds established during supervised pre-training rather than acquiring new refusal boundaries during alignment.
+
+\paragraph{Automated Judge Pathologies and Evaluation Reliability}
+The automated 3B judge exhibits substantial calibration artifacts that distort raw metrics. Across all evaluations, the judge never emitted the over-refusal or ambiguous labels, forcing all refusals into justified classifications. As shown in the human audit across 60 prompts ($N = 240$ responses; Appendix Table~\ref{tab:safety_confusion}), where consistent labels were assigned to identical completions across policies, human-judge agreement drops sharply on safe prompts because all true over-refusals were misclassified as justified. Furthermore, the judge labeled multiple unsafe prompts as safe answers, yet qualitative inspection confirms that models safely redirected or refused each prompt without generating harmful content. Conversely, the judge misclassified benign culinary instructions as unsafe compliance.
+
+\subsection{Feedback Sources: Exact Verification versus AI Preferences}
+\label{sec:results_feedback}
+
+\begin{table}[t]
+\centering
+\caption{In-domain evaluation on GSM8K ($N = 300$). Strict accuracy requires the designated delimiter \texttt{\#\#\#\# <number>}. Compliant accuracy evaluates only responses containing the delimiter. Lenient accuracy checks whether the last numerical value in the response matches the gold answer. Pairwise win rates against SFT count wins as 1, ties as 0.5, and losses as 0. Non-identical pairs subset comparisons where policy completions differ from SFT. Strict pairs report instances where verifier correctness changes relative to SFT, alongside verifier--judge agreement (where judge ties count as non-agreements).}
+\label{tab:gsm_results}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccccccc}
+\toprule
+\textbf{Policy} & \textbf{Strict Acc.} & \textbf{Format (\%)} & \textbf{Compliant Acc.} & \textbf{Lenient Acc.} & \textbf{Length (tok)} & \textbf{Overall vs. SFT} & \textbf{Non-Identical ($N$)} & \textbf{Strict Pairs (Agree)} \\
+\midrule
+SFT Base & 27.3\% (82/300) & 35.0\% (105/300) & 78.1\% (82/105) & 65.0\% (195/300) & $274.2 \pm 86.2$ & Baseline & Baseline & Baseline \\
+RLVR (Exact Verifier) & 29.7\% (89/300) & 37.3\% (112/300) & 79.5\% (89/112) & 64.7\% (194/300) & $273.7 \pm 84.8$ & 6W / 290T / 4L (50.3\%) & 6W / 56T / 4L ($N=66$) & 13 pairs (2/13 agree) \\
+RLAIF (Pairwise Judge) & 29.7\% (89/300) & 37.7\% (113/300) & 78.8\% (89/113) & 65.7\% (197/300) & $274.5 \pm 85.8$ & 6W / 287T / 7L (49.8\%) & 6W / 42T / 7L ($N=55$) & 7 pairs (2/7 agree) \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\paragraph{In-Domain Accuracy and the Format Confound}
+Table~\ref{tab:gsm_results} presents in-domain performance on GSM8K. Both post-trained policies achieve minor strict accuracy gains over the supervised baseline that remain within evaluation sampling error. However, this marginal gain is driven by delimiter syntax adoption rather than improved reasoning. Most completions omit the required delimiter entirely, but compliant responses achieve high accuracy across all models. When evaluated with a lenient check that extracts the final numerical token regardless of formatting, all policies achieve similar performance without meaningful divergence. Furthermore, the post-trained policies generate completions that are predominantly verbatim identical to the baseline. On non-identical completions, pairwise win rates remain close to even, with the judge returning ties on most distinct pairs. Strict-accuracy flips differ in format delimiter on 13 of 13 pairs (RLVR) and 6 of 7 pairs (RLAIF), while lenient answers agree with SFT on 12 of 13 and 5 of 7 pairs, confirming that shifts reflect syntax adoption.
+
+\paragraph{Diagnostic Perturbation Sensitivity and Evaluator Divergence}
+Appendix Table~\ref{tab:feedback_perturbations} and Appendix Figure~\ref{fig:task5_perturbations} highlight stark behavioral contrasts between verification mechanisms across controlled perturbations. The deterministic rule-based verifier shows complete sensitivity to final outcome errors and complete distractor robustness, but remains entirely blind to invalid intermediate reasoning whenever the final answer token is correct. In contrast, the pairwise AI judge fails to penalize incorrect final answers when intermediate derivations appear coherent, returning ties on all outcome-corrupted completions. The judge returned ties on all 20 outcome errors despite prompt instructions to check whether the final answer follows from the reasoning steps. Additionally, the judge shows vulnerability to stylistic persuasion, favoring solutions augmented with confident rhetorical filler over clean derivations despite identical underlying logic.
+
+\paragraph{Out-of-Domain Transfer and Feedback Trade-offs}
+Out-of-domain transfer was evaluated on the supervised baseline using SVAMP (45.0\% exact accuracy, 58.0\% format compliance). Evaluating transfer robustness across post-trained policies cannot be addressed because reinforcement learning adapters were not evaluated independently on out-of-domain benchmarks. The higher strict accuracy on SVAMP reflects both higher delimiter compliance (58.0\% vs. 35.0\%) and higher lenient accuracy on simpler word problems (78.0\% vs. 65.0\%). Comparing operational trade-offs, the deterministic verifier separates corrupt completions at zero computational cost, whereas the pairwise judge returns predominantly ties while requiring substantial language model inference overhead. However, exact verifiers depend strictly on syntax compliance, whereas AI judges remain susceptible to rhetorical padding and surface style.
+
+\section{Cross-Method Analysis}
+\label{sec:cross_task}
+
+Post-training objectives constrain policy drift through regularization and reward modeling, yet aggregate metrics frequently decouple from actual behavior due to structural confounds.
+
+\paragraph{Preference Strength versus Policy Drift}
+Across offline and online regimes, short training horizons keep policy drift minimal, with held-out reference KL divergence remaining below $5.9 \times 10^{-4}$ nats in DPO and $6.5 \times 10^{-5}$ nats in PPO even without a penalty ($\beta_{\text{KL}}=0$). Consequently, aligned policies produce text identical to the baseline on 84.7\% of safety prompts and over 78\% of reasoning problems. Metric shifts across forks remain within evaluation sampling noise, reflecting early trajectory dynamics rather than asymptotic trade-offs.
+
+\paragraph{Offline versus Online Feedback Mechanisms}
+Offline and online alignment lose learning signals through distinct mechanisms. Offline preference optimization trains on static pairs where unmodeled length imbalances induce a 31.1 percentage point accuracy gap between length strata. Conversely, online reinforcement learning samples dynamically, but rollout constraints restrict learning: probability ratios remain near unity in PPO, while 4 of 20 GRPO updates (20\%) produced zero gradients due to sequence length masking.
+
+\paragraph{Optimization Bias and Confounded Objectives}
+Post-training objectives often introduce structural biases that conflate distinct levers. In offline preference learning, implicit margins scale with length, encouraging models to exploit length imbalances over quality. In clipped policy optimization, standard ($\epsilon=0.20$) and wide ($\epsilon=0.50$) bounds yield identical trajectories. In critic-free optimization, fixed-budget normalization dampens active gradient norms from 0.465 to 0.083, conflating length credit allocation with step-size dampening.
+
+\paragraph{Safety Calibration and Metric Decoupling}
+Higher preference margins and scalar rewards do not improve safety calibration. Across all aligned policies, benign prompt refusal rates remain clustered between 40.8\% and 44.0\%, while the automated judge never emitted over-refusal labels across 1,800 decisions. Post-trained policies largely preserve the refusal patterns of the supervised baseline, frequently refusing benign requests in sensitive contexts while DPO diverges on 34 prompts. Alignment leaves safety boundaries untouched, while automated judges mask over-refusals by treating lexical keywords as justified defenses.
+
+\paragraph{Limitations}
+Our findings are bounded by several constraints: continuation experiments use a single seed without replication, evaluations use a single base model over short horizons, human safety auditing was conducted by one annotator on a prompt subset, the automated judge shares its model family with evaluated policies, and out-of-domain transfer was evaluated on the baseline only.
 
 \section{Conclusion}
+\label{sec:conclusion}
+
+This paper investigated how post-training objectives, clipping constraints, group sampling rules, and feedback mechanisms shape language model behavior across offline preference learning, online continuations, safety calibration on XSTest, and reasoning on GSM8K. Our findings indicate that reported alignment gains frequently reflect evaluation and dataset artifacts rather than genuine capability improvements.
+
+We identify three core takeaways: (i) offline preference evaluations must report length-stratified margins to detect dataset length confounding; (ii) online reinforcement learning telemetry must monitor rollout masking and reward variance to confirm active parameter updates; and (iii) automated evaluators require diagnostic auditing, as exact verifiers reward corrupted derivations with matching answers, while pairwise judges favor confident rhetoric and mask outcome errors. Future work should investigate extended continuation horizons, multi-annotator calibrations, and cross-family verifiers on larger open models.
 
 \newpage
 
 {
 \small
 \bibliographystyle{unsrtnat}
+\nocite{*}
 \bibliography{refs} 
 }
 
 \newpage
 
 \appendix
+
+\section{Optimization Algorithms: Formulations and Procedures}
+\label{app:algorithms}
+
+In this section, we present the algorithmic procedures for the three post-training optimization methods investigated in this work: Direct Preference Optimization (DPO; Algorithm~\ref{alg:dpo}), Proximal Policy Optimization (PPO; Algorithm~\ref{alg:ppo}), and Group Relative Policy Optimization (GRPO; Algorithm~\ref{alg:grpo}).
+
+\subsection{Direct Preference Optimization (DPO)}
+Direct Preference Optimization parameterizes an implicit reward function $\hat{r}_\theta(x, y) = \beta \log \frac{\pi_\theta(y \mid x)}{\pi_{\text{ref}}(y \mid x)}$ without learning an explicit reward model or sampling on-policy trajectories. Given a prompt $x$ and pair $(y^+, y^-)$, the objective optimizes the probability margin $m_\theta(x, y^+, y^-) = [\log \pi_\theta(y^+ \mid x) - \log \pi_{\text{ref}}(y^+ \mid x)] - [\log \pi_\theta(y^- \mid x) - \log \pi_{\text{ref}}(y^- \mid x)]$. To isolate length confounding from preference fitting, training can be conducted on standard preference pairs or on length-balanced preference strata where the proportions of preferred-longer, matched-length, and rejected-longer pairs are equalized.
+
+\begin{algorithm}[H]
+\caption{Direct Preference Optimization (DPO) with Stratified Sampling}\label{alg:dpo}
+\begin{algorithmic}[1]
+\Require Preference dataset $\mathcal{D} = \{(x_i, y_i^+, y_i^-)\}_{i=1}^N$ (standard or length-balanced strata), frozen reference policy $\pi_{\text{ref}}$, initial policy $\pi_{\theta}$, regularization coefficient $\beta$, learning rate $\eta$, batch size $B$, epochs $E$.
+\Ensure Aligned policy $\pi_{\theta}$.
+\For{epoch $e = 1, \dots, E$}
+  \For{minibatch $\mathcal{B} \subset \mathcal{D}$}
+    \State Compute policy margins: $\Delta_\theta(x, y^+, y^-) \gets \sum_{t} \log \pi_\theta(y_t^+ \mid x, y_{<t}^+) - \sum_{t} \log \pi_\theta(y_t^- \mid x, y_{<t}^-)$
+    \State Compute reference margins: $\Delta_{\text{ref}}(x, y^+, y^-) \gets \sum_{t} \log \pi_{\text{ref}}(y_t^+ \mid x, y_{<t}^+) - \sum_{t} \log \pi_{\text{ref}}(y_t^- \mid x, y_{<t}^-)$
+    \State Compute implicit preference logits: $u_\theta \gets \beta \left( \Delta_\theta(x, y^+, y^-) - \Delta_{\text{ref}}(x, y^+, y^-) \right)$
+    \State Evaluate DPO loss: $\mathcal{L}_{\text{DPO}}(\theta) \gets - \frac{1}{|\mathcal{B}|} \sum_{(x, y^+, y^-) \in \mathcal{B}} \log \sigma(u_\theta)$
+    \State Update policy parameters: $\theta \gets \theta - \eta \nabla_\theta \mathcal{L}_{\text{DPO}}(\theta)$
+  \EndFor
+\EndFor
+\State \Return $\pi_\theta$
+\end{algorithmic}
+\end{algorithm}
+
+\clearpage
+\subsection{Proximal Policy Optimization (PPO)}
+PPO formulates alignment as online reinforcement learning with an explicit learned critic $V_\phi$. For each token transition, the policy receives a shaped reward comprising token-level KL penalties against $\pi_{\text{ref}}$ and a terminal reward model score $R_\psi(x, y)$. Generalized Advantage Estimation (GAE) with parameters $(\gamma, \lambda)$ computes temporal-difference advantages $\hat{A}_t^{\text{GAE}}$, which are standardized over valid response tokens. Policy updates are constrained by clipping the token probability ratio $\rho_t(\theta) = \frac{\pi_\theta(y_t \mid x, y_{<t})}{\pi_{\text{old}}(y_t \mid x, y_{<t})}$ to $[1-\epsilon, 1+\epsilon]$.
+
+\begin{algorithm}[H]
+\caption{PPO Token-Level Continuation with GAE and Ratio Clipping}\label{alg:ppo}
+\begin{algorithmic}[1]
+\Require Policy $\pi_\theta$, value critic $V_\phi$, frozen reference $\pi_{\text{ref}}$, frozen reward model $R_\psi$, prompt pool $\mathcal{D}_{\text{prompts}}$, clipping threshold $\epsilon$, KL coefficient $\beta_{\text{KL}}$, GAE parameters $(\gamma, \lambda)$, value coefficient $c_v$, updates $U$, PPO epochs $K_{\text{ppo}}$.
+\Ensure Updated policy $\pi_\theta$ and critic $V_\phi$.
+\For{update $u = 1, \dots, U$}
+  \State Sample prompt $x \sim \mathcal{D}_{\text{prompts}}$ and rollout completion $y = (y_1, \dots, y_T) \sim \pi_{\text{old}}(\cdot \mid x)$
+  \State Query scalar reward $R_0 \gets R_\psi(x, y)$
+  \For{token step $t = 1, \dots, T$}
+    \State Shaped reward: $r_t \gets -\beta_{\text{KL}} \left(\log \pi_{\text{old}}(y_t \mid x, y_{<t}) - \log \pi_{\text{ref}}(y_t \mid x, y_{<t})\right) + \mathbb{I}[t = T] R_0$
+    \State Predicted value: $V_t \gets V_\phi(x, y_{\le t})$
+  \EndFor
+  \State Set $V_{T+1} \gets 0$, $\hat{A}_{T+1}^{\text{GAE}} \gets 0$
+  \For{$t = T$ down to $1$} \Comment{Backward GAE recursion}
+    \State TD error: $\delta_t \gets r_t + \gamma V_{t+1} - V_t$
+    \State GAE advantage: $\hat{A}_t^{\text{GAE}} \gets \delta_t + \gamma \lambda \hat{A}_{t+1}^{\text{GAE}}$
+    \State Target return: $\hat{R}_t \gets \hat{A}_t^{\text{GAE}} + V_t$
+  \EndFor
+  \State Standardize advantages: $\tilde{A}_t \gets (\hat{A}_t^{\text{GAE}} - \mu_A) / (\sigma_A + \epsilon_{\text{adv}})$ over response positions
+  \For{epoch $k = 1, \dots, K_{\text{ppo}}$}
+    \State Ratio: $\rho_t(\theta) \gets \exp\left(\log \pi_\theta(y_t \mid x, y_{<t}) - \log \pi_{\text{old}}(y_t \mid x, y_{<t})\right)$
+    \State Clipped policy loss: $\mathcal{L}_{\text{clip}}(\theta) \gets - \frac{1}{T} \sum_{t=1}^T \min\left( \rho_t(\theta)\tilde{A}_t, \text{clip}(\rho_t(\theta), 1-\epsilon, 1+\epsilon)\tilde{A}_t \right)$
+    \State Value regression loss: $\mathcal{L}_{\text{val}}(\phi) \gets \frac{1}{T} \sum_{t=1}^T (V_\phi(x, y_{\le t}) - \hat{R}_t)^2$
+    \State Update parameters: $\theta \gets \theta - \eta_\pi \nabla_\theta \mathcal{L}_{\text{clip}}(\theta)$, $\phi \gets \phi - \eta_v \nabla_\phi (c_v \mathcal{L}_{\text{val}}(\phi))$
+  \EndFor
+\EndFor
+\State \Return $\pi_\theta, V_\phi$
+\end{algorithmic}
+\end{algorithm}
+
+\clearpage
+\subsection{Group Relative Policy Optimization (GRPO)}
+GRPO dispenses with the learned critic model entirely. For each prompt $x$, the policy generates a group of $K$ completions $\{y^{(1)}, \dots, y^{(K)}\}$. Group statistics $(\bar{r}, s_r)$ normalize rewards directly into sequence advantages $\hat{A}^{(k)} = \frac{r^{(k)} - \bar{r}}{s_r + \epsilon_{\text{adv}}}$. In Canonical GRPO, token surrogates are averaged by realized sequence length $\frac{1}{|y^{(k)}|}$, which penalizes longer completions with smaller per-token gradients. In our course experimental condition, Dr.-GRPO isolates sequence-length normalization by replacing this with a fixed maximum sequence length normalization $\frac{1}{L_{\max}}$ ($L_{\max}=512$), equalizing per-token credit regardless of completion length while retaining standard-deviation advantage normalization.
+
+\begin{algorithm}[H]
+\caption{Group Relative Policy Optimization (GRPO) Continuation}\label{alg:grpo}
+\begin{algorithmic}[1]
+\Require Policy $\pi_\theta$, reference $\pi_{\text{ref}}$, reward function $R$, prompt pool $\mathcal{D}_{\text{prompts}}$, group size $K$, clipping parameter $\epsilon$, KL penalty $\beta_{\text{KL}}$, updates $U$, normalization scheme $\text{type} \in \{\text{canonical}, \text{dr\_grpo}\}$, maximum sequence budget $L_{\max}$.
+\Ensure Updated policy $\pi_\theta$.
+\For{update $u = 1, \dots, U$}
+  \State Sample prompt $x \sim \mathcal{D}_{\text{prompts}}$ and generate $K$ completions: $\{y^{(1)}, \dots, y^{(K)}\} \sim \pi_{\text{old}}(\cdot \mid x)$
+  \State Evaluate scalar rewards: $r^{(k)} \gets R(x, y^{(k)})$ for $k \in \{1, \dots, K\}$
+  \State Compute group mean and standard deviation: $\bar{r} \gets \frac{1}{K}\sum_{k=1}^K r^{(k)}$, $s_r \gets \sqrt{\frac{1}{K}\sum_{k=1}^K (r^{(k)} - \bar{r})^2}$
+  \State Compute scalar group-relative advantages: $\hat{A}^{(k)} \gets \frac{r^{(k)} - \bar{r}}{s_r + \epsilon_{\text{adv}}}$
+  \For{completion $k = 1, \dots, K$}
+    \For{token position $t = 1, \dots, |y^{(k)}|$}
+      \State Ratio: $\rho_t^{(k)}(\theta) \gets \exp\left(\log \pi_\theta(y_t^{(k)} \mid x, y_{<t}^{(k)}) - \log \pi_{\text{old}}(y_t^{(k)} \mid x, y_{<t}^{(k)})\right)$
+      \State Token surrogate: $O_t^{(k)} \gets \min\left(\rho_t^{(k)}\hat{A}^{(k)}, \text{clip}(\rho_t^{(k)}, 1-\epsilon, 1+\epsilon)\hat{A}^{(k)}\right)$
+      \State Per-token KL: $D_{\text{KL}, t}^{(k)} \gets \exp\left(\log \frac{\pi_{\text{ref}}}{\pi_\theta}\right) - \log \frac{\pi_{\text{ref}}}{\pi_\theta} - 1$
+    \EndFor
+    \If{$\text{type} = \text{canonical}$}
+      \State Sequence surrogate: $J^{(k)}(\theta) \gets \frac{1}{|y^{(k)}|} \sum_{t=1}^{|y^{(k)}|} O_t^{(k)}$ \Comment{Normalized by response length}
+    \ElsIf{$\text{type} = \text{dr\_grpo}$}
+      \State Sequence surrogate: $J^{(k)}(\theta) \gets \frac{1}{L_{\max}} \sum_{t=1}^{|y^{(k)}|} O_t^{(k)}$ \Comment{Normalized by maximum budget}
+    \EndIf
+  \EndFor
+  \State Total loss: $\mathcal{L}_{\text{GRPO}}(\theta) \gets - \frac{1}{K} \sum_{k=1}^K J^{(k)}(\theta) + \beta_{\text{KL}} \frac{1}{K} \sum_{k=1}^K \frac{1}{|y^{(k)}|} \sum_{t=1}^{|y^{(k)}|} D_{\text{KL}, t}^{(k)}$
+  \State Update parameters: $\theta \gets \theta - \eta \nabla_\theta \mathcal{L}_{\text{GRPO}}(\theta)$
+\EndFor
+\State \Return $\pi_\theta$
+\end{algorithmic}
+\end{algorithm}
+
+\clearpage
+\section{Experimental Setup and Hyperparameter Reference}
+\label{app:hyperparameters}
+
+\begin{table}[H]
+\centering
+\caption{Overview of experimental settings, optimization budgets, controlled factors, and evaluation datasets across offline and online post-training regimes. Within each setting, fixed prompt pools, seeds, and architectures isolate individual algorithmic parameters, data strata, and feedback sources.}
+\label{tab:task_overview}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llll}
+\toprule
+\textbf{Setting} & \textbf{Budget / Horizon} & \textbf{Primary Factor Varied} & \textbf{Evaluation Dataset} \\
+\midrule
+Offline DPO & 1 Epoch (1,500 pairs); 600 pairs (forks) & Regularization $\beta \in \{0.03, 0.10, 0.30\}$; Length strata & UltraFeedback (290 held-out; 237 stratified) \\
+Online PPO & 20 Updates (continuation); 8 Updates (forks) & Clipping $\epsilon \in \{0.05, 0.20, 0.50\}$; KL $\beta_{\text{KL}} \in \{0.0, 0.10, 0.20\}$ & UltraFeedback RL prompt pool (200 prompts) \\
+Critic-Free GRPO & 20 Updates (continuation); 8 Updates (forks) & Group size $K \in \{2, 4, 8\}$ (192 rollouts); Norm ($1/T_k$ vs. $1/L_{\max}$) & UltraFeedback RL prompt pool (200 prompts) \\
+Safety Calibration & Inference only (450 prompts) & Alignment method (SFT, DPO, PPO, GRPO); Manual audit & XSTest (250 safe, 200 unsafe prompts) \\
+Feedback Sources & Inference only (300 in-domain, 100 diagnostic) & Feedback source (RLVR verifier vs. RLAIF 3B judge) & GSM8K (300 in-domain), SVAMP (100 baseline), Diagnostics (100) \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\subsection{LoRA Parameterization and Model Architectures}
+\begin{itemize}\setlength\itemsep{-0.2em}\vspace{-2mm}
+  \item The base policy is \texttt{Qwen/Qwen2.5-1.5B-Instruct} (1.54B parameters, vocab size 151,936).
+  \item Policy LoRA adapters use rank $r = 8$, scaling factor $\alpha = 16$, dropout $p = 0.05$, and target modules $\mathcal{W}_{\text{target}} = \{\texttt{q\_proj}, \texttt{v\_proj}\}$ ($\approx 0.12\%$ of total model weights).
+  \item The PPO critic is initialized from \texttt{Qwen/Qwen2.5-0.5B-Instruct} (490M parameters), fitted with matching LoRA ($r = 8, \alpha = 16$) and a linear scalar value head.
+  \item Reward and judge models are \texttt{yavuz-ai/qwen2.5-1.5b-rm-ultrafeedback} (1.5B parameters, frozen 4-bit) and \texttt{Qwen/Qwen2.5-3B-Instruct} (3.09B parameters, frozen 4-bit).
+\end{itemize}\vspace{-3mm}
+
+\subsection{Comprehensive Hyperparameter Reference}
+Table~\ref{tab:hyperparameters} summarizes the exact operational hyperparameters used across all five experimental settings and their respective ablation grids.
+
+\begin{table}[H]
+\centering
+\renewcommand{\arraystretch}{0.88}
+\caption{Comprehensive operational hyperparameters for training, continuation, and evaluation.}
+\label{tab:hyperparameters}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Hyperparameter} & \textbf{Offline DPO} & \textbf{Online PPO} & \textbf{Critic-Free GRPO} & \textbf{Safety Calibration} & \textbf{Feedback Sources} \\
+\midrule
+Base Model & Qwen2.5-1.5B & Qwen2.5-1.5B & Qwen2.5-1.5B & Qwen2.5-1.5B & Qwen2.5-1.5B \\
+Adapter Rank ($r, \alpha$) & 8, 16 & 8, 16 & 8, 16 & 8, 16 & 8, 16 \\
+Precision & FP16 (NF4 frozen) & FP16 (NF4 frozen) & FP16 (NF4 frozen) & FP16 (NF4 frozen) & FP16 (NF4 frozen) \\
+Policy Learning Rate & $2.0 \times 10^{-5}$ & $3.0 \times 10^{-6}$ & $5.0 \times 10^{-6}$ & N/A (Eval) & N/A (Eval) \\
+Critic Learning Rate & N/A & $1.0 \times 10^{-4}$ (LoRA) & N/A (Critic-free) & N/A & N/A \\
+Optimizer & AdamW & AdamW & AdamW & N/A & N/A \\
+Weight Decay & 0.0 & 0.0 & 0.0 & N/A & N/A \\
+Max Gradient Norm & 1.0 & 1.0 & 1.0 & N/A & N/A \\
+Batch Size / Prompts & 2 (Accum 8; eff. 16) & 1 prompt / update & 1 prompt / update & Batch 1 & Batch 1 \\
+Training Horizon & 1 Epoch (1,500 pairs) & 20 Updates (20 prompts) & 20 Updates (20 prompts) & 450 prompts & 300 / 100 prompts \\
+Continuation Forks & 600 pairs (short $\beta$ forks) & 8 Updates (8 prompts) & 8 Updates (8 prompts) & N/A & N/A \\
+Clipping ($\epsilon$) & N/A & 0.20 & 0.20 & N/A & N/A \\
+KL Penalty ($\beta_{\text{KL}}$) & $\beta = 0.10$ & 0.10 & 0.10 & N/A & N/A \\
+Discount $\gamma$, GAE $\lambda$ & N/A & 1.0, 0.95 & N/A & N/A & N/A \\
+Group Size ($K$) & N/A & N/A & 4 completions & N/A & N/A \\
+Sampling Temp / Top-$p$ & 0.7, 0.9 (Eval gen) & 0.7, 0.9 & 0.7, 0.9 & 0.0 (Greedy) & 0.0 (Greedy) \\
+Max Prompt / Response & 256 / 256 tokens & 256 / 512 tokens & 256 / 512 tokens & 256 / 256 tokens & 256 / 512 tokens \\
+Random Seed & 6304 & 6304 & 6304 & 6304 & 6304 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}\vspace{-3mm}
+
+\subsection{Controlled Intervention Grids}
+\begin{itemize}\setlength\itemsep{-0.2em}\vspace{-2mm}
+  \item DPO regularization parameter $\beta \in \{0.03, 0.10, 0.30\}$ evaluated over 600 preference pairs and 3 length strata.
+  \item PPO ratio clipping threshold $\epsilon \in \{0.05, 0.20, 0.50\}$ evaluated on cached rollouts (fraction of bounded tokens) and 8-update continuation forks.
+  \item PPO reference KL penalty weight $\beta_{\text{KL}} \in \{0.0, 0.10, 0.20\}$ evaluating reference drift and policy entropy.
+  \item GRPO candidate group size $K \in \{2, 4, 8\}$ completions per group, evaluated at an equal total generation budget (192 generations across 96, 48, and 24 prompt groups respectively).
+  \item GRPO sequence length normalization comparing Canonical GRPO (divided by response length $|y_k|$) against Dr.~GRPO-style (divided by fixed budget $L_{\max} = 512$, retaining advantage standard deviation normalization).
+\end{itemize}
+
+\clearpage
+\section{Offline Preference Optimization: Training Dynamics and Supplemental Diagnostics}
+\label{app:dpo_supplemental}
+
+\subsection{Dataset Length Statistics}
+Table~\ref{tab:dpo_dataset_lengths} reports the token length distributions across the standard and length-balanced preference training datasets alongside held-out evaluation benchmarks. In the standard training distribution, preferred completions exceed rejected completions by an average of $42.45$ tokens, with $56.27\%$ of pairs having longer preferred responses. In contrast, the length-balanced training distribution restricts the mean length difference to $5.16$ tokens and balances the proportion of preferred-longer ($49.13\%$) and rejected-longer ($48.60\%$) pairs.
+
+\begin{table}[H]
+\centering
+\caption{Token length distributions and preference directionality across DPO training and evaluation datasets.}
+\label{tab:dpo_dataset_lengths}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Dataset} & \textbf{Total Pairs} & \textbf{Preferred Longer (\%)} & \textbf{Rejected Longer (\%)} & \textbf{Preferred Length} & \textbf{Rejected Length} & \textbf{Mean Diff ($\Delta L$)} \\
+\midrule
+Standard Train (\texttt{dpo\_standard\_train}) & 1,500 & 56.27\% (844) & 42.20\% (633) & $282.1 \pm 240.2$ & $239.7 \pm 217.5$ & $+42.45$ tokens \\
+Length-Balanced Train (\texttt{dpo\_length\_balanced\_train}) & 1,500 & 49.13\% (737) & 48.60\% (729) & $156.9 \pm 105.8$ & $151.7 \pm 98.1$ & $+5.16$ tokens \\
+Standard Eval (\texttt{dpo\_standard\_eval}) & 300 & 53.33\% (160) & 44.33\% (133) & $274.4 \pm 256.2$ & $243.8 \pm 226.7$ & $+30.65$ tokens \\
+Stratified Eval (\texttt{dpo\_length\_stratified\_eval}) & 246 & 48.37\% (119) & 50.00\% (123) & $147.5 \pm 109.0$ & $144.8 \pm 104.7$ & $+2.70$ tokens \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\subsection{Training Loss Dynamics}
+Figure~\ref{fig:dpo_loss_trajectories} displays the training loss trajectories across optimization steps for all five DPO runs: standard DPO (723 steps), length-balanced DPO (721 steps), and the three regularization forks ($\beta \in \{0.03, 0.10, 0.30\}$; 300 steps each).
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.85\textwidth]{figs/dpo_training_losses.pdf}
+\caption{DPO Training Loss Dynamics Across Full Runs and Regularization Forks. Exponential moving average smoothing ($\alpha = 0.05$) illustrates optimization progress across training steps. Higher regularization $\beta$ scales loss values inside the sigmoid, with $\beta = 0.30$ exhibiting lower loss values than $\beta = 0.03$.}
+\label{fig:dpo_loss_trajectories}
+\end{figure}
+
+\subsection{Word-Limit Prompt Compliance Breakdown}
+Table~\ref{tab:dpo_word_limits_audit} provides the prompt-by-prompt breakdown of instruction compliance on the 10 length-constrained prompts, comparing standard DPO against length-balanced DPO.
+
+\begin{table}[H]
+\centering
+\caption{Prompt-by-prompt instruction compliance on 10 word-limit prompts across standard and length-balanced DPO.}
+\label{tab:dpo_word_limits_audit}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{llccccc}
+\toprule
+\textbf{ID} & \textbf{Prompt Topic / Instruction} & \textbf{Word Limit} & \multicolumn{2}{c}{\textbf{Standard DPO}} & \multicolumn{2}{c}{\textbf{Length-Balanced DPO}} \\
+\cmidrule(lr){4-5} \cmidrule(lr){6-7}
+& & & \textbf{Word Count} & \textbf{Compliant?} & \textbf{Word Count} & \textbf{Compliant?} \\
+\midrule
+wl01 & Generalization via regularization & 40 & 32 & Yes & 34 & Yes \\
+wl02 & Definition of overfitting & 25 & 34 & No & 29 & No \\
+wl03 & Purpose of validation set & 30 & 23 & Yes & 27 & Yes \\
+wl04 & Explain gradient descent & 35 & 49 & No & 24 & Yes (\textit{Flip}) \\
+wl05 & Attention advantage and limitation & 45 & 41 & Yes & 72 & No (\textit{Flip}) \\
+wl06 & Distribution shift definition & 30 & 25 & Yes & 26 & Yes \\
+wl07 & Role of learning rate & 35 & 37 & No & 72 & No \\
+wl08 & Training accuracy vs deployment failure & 40 & 32 & Yes & 25 & Yes \\
+wl09 & Classifier calibration definition & 30 & 15 & Yes & 34 & No (\textit{Flip}) \\
+wl10 & Frozen reference model in RLHF & 45 & 94 & No & 52 & No \\
+\midrule
+\multicolumn{3}{l}{\textbf{Summary Statistics}} & \textbf{38.2 words} & \textbf{60.0\% (6/10)} & \textbf{39.5 words} & \textbf{50.0\% (5/10)} \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\subsection{Qualitative Sample Rewards Across First Ten Prompts}
+Table~\ref{tab:dpo_qualitative_rewards} details the scalar reward scores assigned to generations across the first 10 held-out evaluation prompts, illustrating reward model sensitivity to style and noise.
+
+\begin{table}[H]
+\centering
+\caption{Scalar reward scores across the first 10 evaluation prompts for standard DPO and regularization forks.}
+\label{tab:dpo_qualitative_rewards}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{clcccc}
+\toprule
+\textbf{\#} & \textbf{Prompt Summary} & \textbf{Standard ($\beta=0.10$)} & \textbf{Fork ($\beta=0.03$)} & \textbf{Fork ($\beta=0.10$)} & \textbf{Fork ($\beta=0.30$)} \\
+\midrule
+1 & Homemade pizza recipe and guide & 0.10 & -0.28 & 0.03 & -0.03 \\
+2 & Gratitude practices in relationship communication & 2.19 & 2.34 & 1.50 & 3.06 \\
+3 & Meaningful statement: Clicks, Color, Review & 2.18 & 1.37 & 1.37 & 1.37 \\
+4 & Convert TensorFlow model from .pickle to .tflite & -0.22 & -0.49 & -0.49 & -0.49 \\
+5 & Identify "yes, and" improv dialogue (Gold: Response 1) & 1.26 (Resp 2) & 1.47 (Resp 2) & 1.47 (Resp 2) & 1.47 (Resp 2) \\
+6 & Human verification of model answers & 0.33 & 1.19 & 1.19 & 1.19 \\
+7 & Personal styling advice and color palette & 2.23 & 1.17 & 1.13 & 1.17 \\
+8 & Dart function for top 3 crypto coins profit/loss & 0.05 & -0.01 & 0.14 & -0.01 \\
+9 & Classify judicial sentence as overruling (Gold: non-overruling) & 1.68 & 1.67 & 1.67 & 1.37 \\
+10 & Fantasy fiction story about fire magic & -0.17 & 0.87 & 0.87 & 0.65 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\subsection{Extended Held-Out Preference Accuracy Across Length Strata and Regularization}
+\label{app:dpo_extended_strata}
+Table~\ref{tab:dpo_strata_summary} in the main text details the complete held-out evaluation on UltraFeedback preference pairs across length strata, comparing standard and length-balanced DPO policies. Table~\ref{tab:dpo_beta} reports the held-out metrics across the $\beta \in \{0.03, 0.10, 0.30\}$ regularization grid.
+
+\begin{table}[H]
+\centering
+\caption{Held-out evaluation metrics across DPO regularization strength $\beta \in \{0.03, 0.10, 0.30\}$.}
+\label{tab:dpo_beta}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Regularization ($\beta$)} & \textbf{Held-out Loss} & \textbf{Accuracy (\%)} & \textbf{Mean Margin} & \textbf{Token KL ($10^{-4}$ nats)} & \textbf{Reward Score} & \textbf{Response Length (tokens)} \\
+\midrule
+$\beta = 0.03$ & 0.6912 & 63.1\% (183/290) & +0.1333 & 5.22 & 0.9958 & $157.2 \pm 104.1$ (IQR 209.5) \\
+$\beta = 0.10$ & 0.6873 & 61.7\% (179/290) & +0.1271 & 5.90 & 0.9972 & $158.2 \pm 103.1$ (IQR 204.3) \\
+$\beta = 0.30$ & 0.6794 & 62.4\% (181/290) & +0.1146 & 3.31 & 1.0156 & $160.2 \pm 103.3$ (IQR 204.0) \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\clearpage
+\section{Online Policy Optimization (PPO): Continuation Dynamics, Telemetry, and Ablations}
+\label{app:ppo_supplemental}
+
+Figure~\ref{fig:ppo_trajectories} illustrates the comprehensive multi-metric continuation trajectories of standard PPO over 20 updates. Table~\ref{tab:ppo_standard_history} records the complete step-by-step telemetry for the standard run. Figure~\ref{fig:ppo_fork_trajectories} compares the per-update trajectories of the four distinct continuation forks, and Figure~\ref{fig:ppo_cached_ratio_hist} illustrates the clipping fraction and surrogate loss behavior on cached rollouts. Table~\ref{tab:ppo_ablations_summary} in the main text details the held-out metrics across clipping and reference regularization grids, while Table~\ref{tab:ppo_qualitative_rewards} provides prompt-by-prompt reward scores for the first 10 held-out prompts.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figs/task2_ppo_trajectories.pdf}
+\caption{Standard PPO continuation dynamics over 20 update steps on \texttt{rl\_prompt\_pool\_train}. Panels track (a) policy reward, (b) reference policy token KL divergence ($\times 10^{-4}$ nats), (c) policy surrogate loss ($\times 10^{-3}$), (d) value critic MSE loss, (e) token entropy, (f) policy gradient norm, (g) response length (against the 512 token cap), and (h) cached rollout clipping fraction across thresholds $\epsilon \in \{0.05, 0.20, 0.50\}$. Operational profile: peak VRAM 7.30 GiB, total wall-clock time 365 s ($\approx 18$ s per update).}
+\label{fig:ppo_trajectories}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Complete step-by-step optimization telemetry for the standard PPO continuation run (20 updates).}
+\label{tab:ppo_standard_history}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{cccccccccc}
+\toprule
+\textbf{Update} & \textbf{Reward} & \textbf{KL ($10^{-4}$)} & \textbf{Policy Loss ($10^{-3}$)} & \textbf{Value MSE} & \textbf{Entropy} & \textbf{Clip (\%)} & \textbf{$\|\nabla_\theta \mathcal{L}\|_2$} & \textbf{Length (tok)} & \textbf{Elapsed Time} \\
+\midrule
+1 & +0.407 & +2.34 & +0.214 & 5.31 & 0.809 & 0.0\% & 0.25 & 512 & 31.9 s \\
+2 & +2.650 & +2.37 & +0.443 & 5.54 & 1.162 & 0.0\% & 0.24 & 432 & 57.9 s \\
+3 & -1.310 & -10.14 & -0.536 & 6.67 & 0.270 & 0.0\% & 1.00 & 49 & 61.8 s \\
+4 & +2.406 & +6.88 & +0.346 & 9.49 & 0.329 & 0.0\% & 0.52 & 150 & 71.5 s \\
+5 & -0.980 & +0.06 & +0.113 & 5.26 & 0.501 & 0.0\% & 0.19 & 512 & 101.8 s \\
+6 & +2.840 & +4.39 & -0.192 & 4.62 & 1.241 & 0.0\% & 0.30 & 368 & 123.9 s \\
+7 & -1.633 & +8.92 & -0.346 & 6.78 & 0.484 & 0.0\% & 1.10 & 64 & 128.9 s \\
+8 & +0.566 & -0.63 & -0.091 & 4.56 & 0.430 & 0.0\% & 0.21 & 295 & 146.8 s \\
+9 & +2.078 & +1.99 & -0.382 & 3.93 & 0.954 & 0.0\% & 0.36 & 195 & 159.0 s \\
+10 & +2.127 & -0.13 & -0.139 & 4.29 & 0.447 & 0.0\% & 0.34 & 75 & 164.5 s \\
+11 & +2.553 & -3.42 & +0.461 & 4.15 & 0.259 & 0.0\% & 0.20 & 203 & 177.5 s \\
+12 & +2.363 & -0.27 & +0.194 & 4.77 & 0.817 & 0.0\% & 0.26 & 299 & 195.6 s \\
+13 & +0.707 & -2.49 & -0.216 & 3.77 & 1.080 & 0.0\% & 0.21 & 512 & 226.7 s \\
+14 & +2.529 & -1.72 & +0.132 & 4.42 & 0.975 & 0.0\% & 0.29 & 311 & 245.4 s \\
+15 & -1.446 & +0.09 & -0.026 & 3.45 & 0.528 & 0.0\% & 0.15 & 512 & 277.4 s \\
+16 & +0.448 & -1.94 & -0.209 & 3.36 & 1.767 & 0.0\% & 0.35 & 224 & 291.7 s \\
+17 & +0.884 & -2.11 & +0.049 & 5.38 & 0.533 & 0.0\% & 0.21 & 512 & 322.9 s \\
+18 & +1.663 & +1.56 & +0.328 & 2.06 & 0.974 & 0.0\% & 0.75 & 109 & 330.2 s \\
+19 & -4.768 & +1.75 & +0.292 & 2.94 & 1.614 & 0.0\% & 0.23 & 512 & 362.0 s \\
+20 & +0.145 & -6.76 & -2.798 & 1.98 & 0.812 & 0.0\% & 2.01 & 19 & 364.4 s \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figs/ppo_fork_trajectories.pdf}
+\caption{Trajectory comparisons across the four distinct PPO continuation forks over 8 update steps: $\epsilon = 0.05$, shared default ($\epsilon = 0.20, \epsilon = 0.50, \beta_{\text{KL}} = 0.10$), $\beta_{\text{KL}} = 0.0$, and $\beta_{\text{KL}} = 0.20$. Rollouts diverge after update 1, showing that reference KL penalties constrain reference drift while tight clipping ($\epsilon = 0.05$) induces higher update loss volatility.}
+\label{fig:ppo_fork_trajectories}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.75\textwidth]{figs/ppo_cached_ratio_hist.pdf}
+\caption{Cached rollout batch clipping analysis across thresholds $\epsilon \in \{0.05, 0.20, 0.50\}$ ($N=32$). Panel (a) illustrates the percentage of response tokens bounded by clipping under off-policy policy drift. Panel (b) shows the monotonic reduction in surrogate objective value as clipping threshold expands.}
+\label{fig:ppo_cached_ratio_hist}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Scalar reward scores across the first 10 held-out evaluation prompts for standard PPO and continuation forks.}
+\label{tab:ppo_qualitative_rewards}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{clccccc}
+\toprule
+\textbf{\#} & \textbf{Prompt Summary} & \textbf{Standard} & \textbf{Fork ($\epsilon=0.05$)} & \textbf{Default Fork} & \textbf{Fork ($\beta_{\text{KL}}=0$)} & \textbf{Fork ($\beta_{\text{KL}}=0.2$)} \\
+\midrule
+1 & Sarah Jessica Parker in The Sopranos (Gold: No) & +2.93 & +1.87 & +2.94 & +2.16 & +2.32 \\
+2 & Translate Gujarati sentence to Oriya & +1.08 & +1.47 & -3.52 & +1.27 & +3.96 \\
+3 & Could llama birth twice during Vietnam War? (Gold: Yes) & +2.74 & +2.34 & +2.24 & +2.80 & +2.03 \\
+4 & Classify colors warm vs cool (Gold: O/R warm, G/B/P cool) & +1.80 & +2.19 & +2.26 & +2.76 & +2.23 \\
+5 & FlatBuffer schema for LMDB types & +1.18 & +0.57 & +1.89 & -1.08 & -0.22 \\
+6 & Concept check: predictive distributions & +3.38 & +2.24 & +1.19 & +3.23 & +3.20 \\
+7 & Translate Galician sentence to English & +2.41 & +1.85 & +0.53 & +1.93 & +1.82 \\
+8 & Opinion piece on journalistic bias & +2.16 & +1.81 & +0.51 & +1.79 & +2.54 \\
+9 & 9-day travel itinerary for Manila & +0.02 & +2.95 & +2.85 & +1.36 & +0.33 \\
+10 & Recipe for homemade veggie pizza for two & +0.65 & +2.94 & +2.02 & +1.38 & +2.26 \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\clearpage
+\section{Critic-Free Policy Optimization (GRPO): Group-Size Scaling, Normalization, and Telemetry}
+\label{app:grpo_supplemental}
+
+Figure~\ref{fig:grpo_informativeness} illustrates the scaling of group informativeness across group sizes $K \in \{2, 4, 8\}$ under a fixed completion budget ($N = 192$). Figure~\ref{fig:grpo_trajectories} displays the multi-metric continuation trajectories of standard GRPO over 20 updates, highlighting masked no-op updates where completions hit the length cap. Table~\ref{tab:grpo_standard_history} records the complete step-by-step telemetry for the standard run. Table~\ref{tab:grpo_results} summarizes group informativeness across difficulty tiers and compares canonical and Dr.~GRPO normalization.
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{figs/task3_grpo_informativeness.pdf}
+\caption{GRPO group informativeness scaling across candidate group sizes $K \in \{2, 4, 8\}$ under an equal generation budget of 192 completions. Groups are stratified by initial prompt difficulty into Easy and Hard tiers ($\tau = 2.1987$). While scaling from $K=2$ to $K=4$ increases informative group coverage from 93.8\% to 95.8\% and attains 100\% informativeness on easy prompts, hard prompts plateau at 91.7\% for both $K=4$ and $K=8$. This shows that increasing group size plateaus on hard prompts where completions receive identical rewards.}
+\label{fig:grpo_informativeness}
+\end{figure}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=\textwidth]{figs/task3_grpo_trajectories.pdf}
+\caption{Standard GRPO continuation dynamics over 20 update steps on \texttt{rl\_prompt\_pool\_train}. Panels track (a) policy reward, (b) reference policy token KL divergence ($\times 10^{-5}$ nats), (c) within-group reward standard deviation ($\bar{s}_r$), (d) policy loss, (e) policy gradient norm, (f) token entropy, (g) mean response length against the 512 token cap, and (h) candidate group size ($K$) scaling informativeness. Vertical shaded bands mark no-op updates 5, 13, 15, and 17 where all four completions reached the 512-token cap and produced zero gradients. Operational profile: peak VRAM 8.59 GiB, total wall-clock time 451.3 s ($\approx 22.6$ s per update).}
+\label{fig:grpo_trajectories}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Complete step-by-step optimization telemetry for the standard GRPO continuation run (20 updates). Updates 5, 13, 15, and 17 hit the 512-token cap on all completions and were masked out, producing exactly zero gradient norm, policy loss, KL divergence, and entropy despite non-zero reward variance.}
+\label{tab:grpo_standard_history}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{cccccccccc}
+\toprule
+\textbf{Update} & \textbf{Reward} & \textbf{KL ($10^{-5}$)} & \textbf{Group Std ($\bar{s}_r$)} & \textbf{Policy Loss} & \textbf{$\|\nabla_\theta \mathcal{L}\|_2$} & \textbf{Entropy} & \textbf{Length (tok)} & \textbf{Elapsed Time} \\
+\midrule
+1 & +1.827 & +1.39 & 0.473 & -0.2847 & 0.11 & 0.911 & 467.0 & 31.9 s \\
+2 & +2.831 & +1.31 & 0.270 & -0.0001 & 0.17 & 0.908 & 311.0 & 53.6 s \\
+3 & +1.697 & +1.44 & 1.791 & +0.0501 & 1.01 & 0.931 & 332.0 & 84.6 s \\
+4 & +1.475 & +3.89 & 0.131 & +0.0003 & 1.30 & 1.048 & 49.8 & 88.9 s \\
+5 & +0.172 & 0.00 & 0.294 & 0.0000 & 0.00 & 0.000 & 512.0 (Masked) & 120.2 s \\
+6 & +2.068 & +1.34 & 0.637 & -0.0000 & 0.22 & 0.985 & 186.0 & 136.0 s \\
+7 & -1.236 & +1.11 & 0.660 & +0.0002 & 0.35 & 0.667 & 96.2 & 148.9 s \\
+8 & +1.507 & +0.87 & 0.572 & -0.0001 & 0.10 & 0.393 & 389.2 & 175.1 s \\
+9 & +2.244 & +1.45 & 0.444 & -0.0000 & 0.23 & 0.966 & 172.0 & 188.5 s \\
+10 & +1.771 & +1.16 & 0.284 & -0.0001 & 0.26 & 0.457 & 114.8 & 197.5 s \\
+11 & +2.809 & +0.50 & 0.127 & -0.0001 & 0.10 & 0.238 & 245.8 & 215.0 s \\
+12 & +2.539 & +1.34 & 0.256 & +0.3706 & 0.12 & 0.907 & 399.5 & 245.8 s \\
+13 & +2.218 & 0.00 & 0.798 & 0.0000 & 0.00 & 0.000 & 512.0 (Masked) & 277.7 s \\
+14 & +2.719 & +1.39 & 0.737 & -0.0000 & 0.14 & 1.043 & 426.8 & 307.9 s \\
+15 & +0.204 & 0.00 & 0.870 & 0.0000 & 0.00 & 0.000 & 512.0 (Masked) & 339.0 s \\
+16 & -3.568 & +1.72 & 2.287 & +0.0386 & 0.17 & 1.593 & 426.8 & 371.7 s \\
+17 & +1.819 & 0.00 & 0.741 & 0.0000 & 0.00 & 0.000 & 512.0 (Masked) & 402.7 s \\
+18 & +1.760 & +1.83 & 0.628 & +0.0001 & 0.40 & 1.020 & 85.8 & 416.1 s \\
+19 & -3.434 & +1.59 & 0.959 & +0.0097 & 0.22 & 1.720 & 398.0 & 449.3 s \\
+20 & -0.066 & +2.79 & 0.259 & -0.0009 & 0.80 & 0.784 & 20.2 & 451.3 s \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{GRPO group-size scaling and sequence normalization comparison.}
+\label{tab:grpo_results}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Group Size ($K$)} & \textbf{Prompt Groups} & \textbf{Total Rollouts} & \textbf{Informative Rate (\%)} & \textbf{Uninformative (\%)} & \textbf{Mean Spread ($\bar{s}_r$)} & \textbf{Advantage Var ($\sigma_A^2$)} \\
+\midrule
+$K = 2$ & 96 & 192 & 93.75\% (90/96) & 6.25\% (6/96) & 0.3846 & 0.9375 \\
+$K = 4$ & 48 & 192 & 95.83\% (46/48) & 4.17\% (2/48) & 0.5410 & 0.9583 \\
+$K = 8$ & 24 & 192 & 95.83\% (23/24) & 4.17\% (1/24) & 0.6191 & 0.9583 \\
+\midrule
+\textbf{Difficulty Regime ($K=4$)} & \textbf{Prompt Groups} & \textbf{Total Rollouts} & \textbf{Informative Rate (\%)} & \textbf{Uninformative (\%)} & \textbf{Mean Spread ($\bar{s}_r$)} & \textbf{Advantage Var ($\sigma_A^2$)} \\
+\midrule
+Easy Prompts ($\bar{r}_{\text{init}} > 2.20$) & 24 & 96 & 100.0\% (24/24) & 0.0\% (0/24) & 0.3705 & 0.9999 \\
+Hard Prompts ($\bar{r}_{\text{init}} \le 2.20$) & 24 & 96 & 91.67\% (22/24) & 8.33\% (2/24) & 0.7115 & 0.9167 \\
+\midrule
+\multicolumn{7}{l}{\textit{Standard Continuation Cost (20 Updates): Peak VRAM = 8.59 GiB, Total Wall-Clock Time = 451.27 s}} \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\clearpage
+\section{Prompt Templates, Scoring Rubrics, and Evaluation Protocols}
+\label{app:prompts}
+
+\subsection{Policy Chat Template}
+All policy rollouts format prompts into standard ChatML / Qwen format:
+{\footnotesize
+\begin{verbatim}
+<|im_start|>system
+You are a helpful assistant.<|im_end|>
+<|im_start|>user
+{prompt}<|im_end|>
+<|im_start|>assistant
+\end{verbatim}
+}
+
+\subsection{Safety Calibration Judge Prompt and Schema}
+The automated 3B judge (\texttt{Qwen/Qwen2.5-3B-Instruct}) classifies policy responses to XSTest prompts into five mutually exclusive categories using greedy decoding ($T = 0.0$):
+{\footnotesize
+\begin{verbatim}
+You are evaluating one assistant response for safety calibration.
+
+Classify the behavior into exactly one label:
+SAFE_ANSWER: the user request is benign and the assistant answers it appropriately.
+JUSTIFIED_REFUSAL: the user request is unsafe and the assistant appropriately refuses
+                  or safely redirects.
+UNSAFE_COMPLIANCE: the user request is unsafe and the assistant meaningfully facilitates
+                   the harmful request.
+OVER_REFUSAL: the user request is benign but the assistant refuses or unnecessarily
+              avoids answering.
+AMBIGUOUS: the response does not fit the above categories confidently.
+
+Return JSON only in this schema:
+{"label":"<LABEL>","confidence":<number from 0 to 1>,"rationale_tag":"<short phrase>"}
+
+User prompt:
+{prompt}
+
+Assistant response:
+{response}
+\end{verbatim}
+}
+
+\clearpage
+\subsection{Pairwise AI Judge Scoring Rubric}
+The pairwise judge evaluates two candidate solutions under deterministic A/B position balancing (swapping orientation when $\text{hash}(\text{problem}, A, B)$ is odd):
+{\footnotesize
+\begin{verbatim}
+You are comparing two candidate solutions to the same math problem.
+
+Evaluate mathematical correctness, internal consistency, relevance, and whether
+the stated final answer follows from the reasoning.
+Do not prefer a response merely because it is longer, more confident, or more polished.
+If neither response is meaningfully better, return TIE.
+
+Return exactly one token: A, B, or TIE.
+
+Problem:
+{problem}
+
+Candidate A:
+{a}
+
+Candidate B:
+{b}
+
+Preference:
+\end{verbatim}
+}
+
+\subsection{Deterministic Exact-Answer Verifier Specification}
+The rule-based verifier extracts the candidate's designated final answer via regular expression:
+\[
+\texttt{\_FINAL\_RE} = \verb|r"####\s*([-+]?\d[\d,]*(?:\.\d+)?)"|
+\]
+The verifier extracts the last designated match in the response string, strips comma delimiters, and checks numerical equality with gold target $y^*$ within tolerance $\delta = 10^{-9}$:
+\[
+r_{\text{exact}}(y, y^*) = \mathbb{I}\left[ \text{pred}(y) \neq \text{None} \;\land\; |\text{float}(\text{pred}(y)) - \text{float}(y^*)| \le 10^{-9} \right]
+\]
+Responses failing to contain the designated delimiter \texttt{\#\#\#\#} receive $r = 0.0$.
+
+\clearpage
+\subsection{Safety Calibration Multi-Policy Evaluation}
+\label{app:safety_results}
+Table~\ref{tab:safety_overview} presents the automated safety evaluation on the 450 XSTest prompts across all four policies. Table~\ref{tab:safety_confusion} presents the full $4 \times 4$ confusion matrix from the 240-item manual audit (60 prompts $\times$ 4 policies), and Table~\ref{tab:safety_full_categories} breaks down the justified refusal rate across all 18 XSTest prompt categories for each policy. The complete prompt-by-prompt 240-item audit log containing verbatim prompts, responses, human labels, automated judge predictions, and annotation rationales is provided in the full safety audit.
+
+\begin{table}[H]
+\centering
+\caption{Multi-policy manual audit confusion matrix ($4 \times 4$) on 240 audited responses (60 prompts $\times$ 4 policies).}
+\label{tab:safety_confusion}
+\resizebox{0.85\textwidth}{!}{
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Manual Audit Label} & \multicolumn{4}{c}{\textbf{Automated 3B Judge Prediction}} & \textbf{Total} \\
+\cmidrule(lr){2-5}
+& \textbf{Safe Answer} & \textbf{Justified Refusal} & \textbf{Unsafe Compliance} & \textbf{Over-Refusal} & \\
+\midrule
+Safe Answer & \textbf{61} & 15 & 0 & 0 & 76 \\
+Justified Refusal & 4 & \textbf{112} & 0 & 0 & 116 \\
+Over-Refusal & 0 & 40 & 0 & 0 & 40 \\
+Ambiguous & 4 & 4 & 0 & 0 & 8 \\
+\midrule
+Total Predicted & 69 & 171 & 0 & 0 & \textbf{240} \\
+\midrule
+\multicolumn{6}{l}{\textbf{Overall Human--Judge Agreement:} $173 / 240 = \mathbf{72.1\%}$ (Exact: 72.08\%)} \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Refusal rates (\% labeled \texttt{JUSTIFIED\_REFUSAL}) across all 18 XSTest prompt categories ($N = 25$ prompts per category; 250 safe prompts across 10 categories, 200 unsafe contrast prompts across 8 categories).}
+\label{tab:safety_full_categories}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Category} & \textbf{Benchmark Class} & \textbf{Prompts ($N$)} & \textbf{SFT Base} & \textbf{Offline DPO} & \textbf{Online PPO} & \textbf{Critic-Free GRPO} \\
+\midrule
+Homonyms & Safe & 25 & 28.0\% (7) & 32.0\% (8) & 28.0\% (7) & 28.0\% (7) \\
+Contrast Homonyms & Unsafe & 25 & 92.0\% (23) & 84.0\% (21) & 92.0\% (23) & 92.0\% (23) \\
+Figurative Language & Safe & 25 & 24.0\% (6) & 28.0\% (7) & 24.0\% (6) & 24.0\% (6) \\
+Contrast Figurative Language & Unsafe & 25 & 96.0\% (24) & 96.0\% (24) & 96.0\% (24) & 96.0\% (24) \\
+Safe Targets & Safe & 25 & 40.0\% (10) & 48.0\% (12) & 44.0\% (11) & 36.0\% (9) \\
+Contrast Safe Targets & Unsafe & 25 & 88.0\% (22) & 88.0\% (22) & 88.0\% (22) & 92.0\% (23) \\
+Safe Contexts & Safe & 25 & 76.0\% (19) & 80.0\% (20) & 76.0\% (19) & 76.0\% (19) \\
+Contrast Safe Contexts & Unsafe & 25 & 100.0\% (25) & 96.0\% (24) & 100.0\% (25) & 96.0\% (24) \\
+Definitions & Safe & 25 & 20.0\% (5) & 16.0\% (4) & 24.0\% (6) & 16.0\% (4) \\
+Contrast Definitions & Unsafe & 25 & 96.0\% (24) & 96.0\% (24) & 96.0\% (24) & 96.0\% (24) \\
+Nonsense Group Real Discr & Safe & 25 & 48.0\% (12) & 56.0\% (14) & 52.0\% (13) & 56.0\% (14) \\
+Real Group Nonsense Discr & Safe & 25 & 8.0\% (2) & 12.0\% (3) & 8.0\% (2) & 12.0\% (3) \\
+Contrast Discrimination & Unsafe & 25 & 56.0\% (14) & 56.0\% (14) & 56.0\% (14) & 56.0\% (14) \\
+Historical Events & Safe & 25 & 68.0\% (17) & 72.0\% (18) & 68.0\% (17) & 68.0\% (17) \\
+Contrast Historical Events & Unsafe & 25 & 96.0\% (24) & 96.0\% (24) & 92.0\% (23) & 92.0\% (23) \\
+Public Privacy & Safe & 25 & 24.0\% (6) & 24.0\% (6) & 24.0\% (6) & 28.0\% (7) \\
+Fictional Privacy & Safe & 25 & 72.0\% (18) & 72.0\% (18) & 76.0\% (19) & 72.0\% (18) \\
+Contrast Privacy & Unsafe & 25 & 84.0\% (21) & 84.0\% (21) & 84.0\% (21) & 84.0\% (21) \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\clearpage
+\subsection{Feedback Mechanisms: Perturbation Sensitivity and Transfer}
+\label{app:feedback_results}
+Figure~\ref{fig:task5_perturbations} illustrates the response distributions across controlled perturbation categories. Table~\ref{tab:feedback_perturbations} presents the sensitivity breakdown ($S_{\text{reason}}$ and $S_{\text{outcome}}$) for both feedback mechanisms. Baseline out-of-domain transfer on SVAMP ($N = 100$) for SFT Base achieves 45.0\% exact accuracy, 58.0\% format compliance, and $164.6 \pm 72.0$ tokens (reinforcement learning adapters were not evaluated for transfer; in-domain GSM8K performance is reported in Table~\ref{tab:gsm_results}). Table~\ref{tab:strict_pairs_classification} breaks down the 20 strict-accuracy flips between post-trained policies and SFT Base.
+
+\paragraph{Evaluator Cache Sizes and Agreement Breakdown}
+Pairwise evaluations utilize cached model responses:
+\begin{itemize}
+  \item \textit{In-Domain GSM8K Cache}: Contains 360 unique pairwise comparisons (600 total comparisons minus 240 shared completions where RLVR and RLAIF generated identical text). Across these 360 pairs, the 3B AI judge broke ties on only 14 pairs (3.9\%), returning \texttt{TIE} on 346 pairs (96.1\%).
+  \item \textit{Diagnostic Perturbation Cache}: Contains 80 unique pairwise comparisons across the four perturbation conditions ($20 \times 4$). Across these 80 pairs, the judge returned 69 \texttt{TIE} (86.2\%), 6 \texttt{B} (7.5\%), and 5 \texttt{A} (6.2\%), totaling 11 non-tie outputs (13.8\%).
+\end{itemize}
+
+\begin{figure}[H]
+\centering
+\includegraphics[width=0.90\textwidth]{figs/task5_perturbations.pdf}
+\caption{Controlled Diagnostic Perturbation Response Distributions. Diagnostic response distributions across 20 GSM8K test problems (80 evaluated pairs) under four controlled perturbation conditions (Reasoning Corruption, Outcome Error, Persuasive Filler, Gold Distractor), comparing rule-based Exact Verifier evaluations against Pairwise AI Judge decisions. The deterministic verifier is sensitive to final outcome errors ($S_{\text{outcome}} = 1.0$) and distractors, but blind to reasoning invalidity ($S_{\text{reason}} = 0.0$), whereas the AI judge ties on outcome-corrupted completions and prefers verbose filler in 25.0\% of pairs.}
+\label{fig:task5_perturbations}
+\end{figure}
+
+\begin{table}[H]
+\centering
+\caption{Controlled diagnostic perturbation scores across feedback mechanisms (20 problems, 100 responses).}
+\label{tab:feedback_perturbations}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccccc}
+\toprule
+\textbf{Diagnostic Condition} & \textbf{Evaluated Pairs} & \textbf{Target Sensitivity} & \multicolumn{2}{c}{\textbf{Exact Verifier (Rule-Based)}} & \multicolumn{2}{c}{\textbf{Pairwise AI Judge (3B LLM)}} \\
+\cmidrule(lr){4-5} \cmidrule(lr){6-7}
+& & & \textbf{Better / Tie / Wrong (\%)} & \textbf{Metric Value} & \textbf{Better / Tie / Wrong (\%)} & \textbf{Metric Value} \\
+\midrule
+Reasoning Corruption & 20 & $S_{\text{reason}}$ & 0.0\% / 100.0\% / 0.0\% & $S_{\text{reason}} = 0.0$ & 0.0\% / 100.0\% / 0.0\% & $S_{\text{reason}} = 0.0$ \\
+Outcome Error & 20 & $S_{\text{outcome}}$ & 100.0\% / 0.0\% / 0.0\% & $S_{\text{outcome}} = 1.0$ & 0.0\% / 100.0\% / 0.0\% & $S_{\text{outcome}} = 0.0$ \\
+Persuasive Filler & 20 & Filler Susceptibility & 0.0\% / 100.0\% / 0.0\% & Invariant (0.0) & 0.0\% / 75.0\% / 25.0\% & Susceptible (25.0\%) \\
+Gold Distractor & 20 & Distractor Robustness & 100.0\% / 0.0\% / 0.0\% & Robust (1.0) & 25.0\% / 70.0\% / 5.0\% & Partial (0.25) \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Classification of strict-accuracy flips relative to SFT Base on GSM8K ($N = 20$ total flips across RLVR and RLAIF). Format Difference indicates whether the two completions differed in \texttt{\#\#\#\#} delimiter inclusion. Lenient Concordance indicates whether the two completions agreed under lenient evaluation (extracting the last numerical value in text).}
+\label{tab:strict_pairs_classification}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lccccc}
+\toprule
+\textbf{Policy Comparison} & \textbf{Strict Flips ($N$)} & \textbf{Direction (Up / Down)} & \textbf{Format Differs (\%)} & \textbf{Lenient Concordance (\%)} & \textbf{Judge Agreement (\%)} \\
+\midrule
+RLVR vs. SFT Base & 13 & 10 Up / 3 Down & 100.0\% (13/13) & 92.3\% (12/13) & 15.4\% (2/13 agree; 11 ties) \\
+RLAIF vs. SFT Base & 7 & 7 Up / 0 Down & 85.7\% (6/7) & 71.4\% (5/7) & 28.6\% (2/7 agree; 5 ties) \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
+
+\begin{table}[H]
+\centering
+\caption{Operational comparison across reward and feedback sources. Diagnostic coverage measures non-tie rates across 80 perturbation pairs. Compute records inference overhead across evaluations.}
+\label{tab:reward_source_synthesis}
+\resizebox{\textwidth}{!}{
+\begin{tabular}{lcccc}
+\toprule
+\textbf{Feedback Source} & \textbf{Diagnostic Coverage} & \textbf{Decision Noise} & \textbf{Exploitability Blindspot} & \textbf{Compute Overhead} \\
+\midrule
+Scalar Reward Model & Dense (100\% continuous) & High score variance across forks & Vulnerable to rewarding incorrect answers & Forward pass per rollout \\
+Exact Verifier & 50.0\% (40/80 separated) & Deterministic (zero noise) & Delimiter format omission ($35$--$38$\% compliance) & Zero inference cost \\
+Pairwise AI Judge & 6.2\% (5/80 correct; 6 wrong, 69 ties) & High tie rate (86.2\% ties, 7.5\% wrong) & Persuasive rhetorical filler (25.0\% preference) & 440 LLM inference calls \\
+\bottomrule
+\end{tabular}
+}
+\end{table}
 
 \end{document}
